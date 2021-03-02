@@ -7,16 +7,15 @@
 #include <Adafruit_NeoPixel.h>
 #include <ESP32TimerInterrupt.h>
 
-#define WS_PIN 18       // пин DI
-#define NUM_LEDS 4  // число диодов
-long counter = 0;
+#include "Constants.h"
+#include "Brightness.h"
 
 int RTC_hours, RTC_minutes, RTC_seconds, RTC_day, RTC_month, RTC_year, RTC_day_of_week;
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, WS_PIN, NEO_GRB + NEO_KHZ800);
-  
+
 // the number of the PWM pin
 const int PWMPin = 13;  // GPIO23
-int volt;
+
 // Пины выводов управления дешифратором
 int A = 15;
 int B = 5;
@@ -32,52 +31,31 @@ int Anod_3 = 33;
 int Anod_4 = 32;
 //Точки между сигментами
 int Toch = 14;
-// Напряжение Анода
-int Uolt = 34;
-// Датчик света 1
-int PH_1 = 36;
-// Датчик света 2
-int PH_2 = 39;
+
 // Строка для отображения
 String stringToDisplay = "123456";
-// Количество ламп
-#define lampsCount 4
 // аноды по порядку hh:mm:ss
 int anodesSequence[4] = {Anod_1, Anod_2, Anod_3, Anod_4};
 
 #define gpsSerial Serial2
 TinyGPS gps;
 
-#define I2C_SDA 21
-#define I2C_SCL 22
-#define DS1307_ADDRESS 0x68
-#define zero 0x00
-
 char inputString[2];
 
-// setting PWM properties
-const int freq = 32000;
-const int PWMChannel = 0;
-const int resolution = 8;
-int dutyCycle = 100;
 int i = 0;
 
+void doIndication();
+void getDataGps();
+void setRTCDateTime(byte h, byte m, byte s, byte d, byte mon, byte y, byte w);
+byte decToBcd(byte val);
+byte bcdToDec(byte val);
+void getRTCTime();
+String updateDisplayString();
+String getTimeNow();
+time_t ukraineTime();
+String PreZero(int digit);
+void setNumber(int num);
 
-int maxVoltage = 1920;
-int minVoltage = 1550;
-int aimVoltage = (maxVoltage + minVoltage) / 2;
-
-void IRAM_ATTR TimerHandler0(void)
-{
-  volt = analogRead(Uolt);
-  if ((volt - aimVoltage) > 10) dutyCycle += 5;
-  if ((volt - aimVoltage) < 10) dutyCycle -= 5;
-  if ((volt - aimVoltage) > 5) dutyCycle  += 1;
-  if ((volt - aimVoltage) < 5)  dutyCycle -= 1;
-  if (dutyCycle < 15 )  dutyCycle = 15;  // верхний предел напряжения Анода
-  if (dutyCycle > 250 ) dutyCycle = 250; // нижний предел напряжения Анода
-  ledcWrite(PWMChannel, dutyCycle);
-}
 ESP32Timer ITimer0(0);
 #define TIMER0_INTERVAL_MS  4000
 
@@ -86,7 +64,7 @@ void setup(){
   ledcSetup(PWMChannel, freq, resolution);
   // attach the channel to the GPIO to be controlled
   ledcAttachPin(PWMPin, PWMChannel);
-  ledcWrite(PWMChannel, dutyCycle);
+  ledcWrite(PWMChannel, defaultDuty);
 
   Wire.begin(I2C_SDA, I2C_SCL);
 
@@ -95,35 +73,34 @@ void setup(){
   pinMode(B, OUTPUT);
   pinMode(C, OUTPUT);
   pinMode(D, OUTPUT);
-  pinMode(Uolt, INPUT);
-  pinMode(PH_1, INPUT);
-  pinMode(PH_2, INPUT);
-  
+  pinMode(voltPin, INPUT);
+  pinMode(lighSensor1Pin, INPUT);
+  pinMode(lighSensor2Pin, INPUT);
+
   pinMode(Anod_1, OUTPUT);
   pinMode(Anod_2, OUTPUT);
   pinMode(Anod_3, OUTPUT);
   pinMode(Anod_4, OUTPUT);
   pinMode(Toch, OUTPUT);
-  
+
   gpsSerial.begin(9600);
 
   Serial.begin(115200);
 
-    // Interval in microsecs
   if (ITimer0.attachInterruptInterval(TIMER0_INTERVAL_MS , TimerHandler0))
-    Serial.println("Starting  ITimer0 OK, millis() = " + String(millis()));
-  else
-    Serial.println("Can't set ITimer0. Select another freq. or timer");
+  Serial.println("Starting  ITimer0 OK, millis() = " + String(millis()));
+else
+  Serial.println("Can't set ITimer0. Select another freq. or timer");
 
   //WS2812
 //  strip.begin();
 //  strip.setBrightness(50);    // яркость, от 0 до 255
 //  for (int i = 0; i < NUM_LEDS; i++ ) {   // от 0 до первой трети
-//    strip.setPixelColor(i, 0);     // залить 
+//    strip.setPixelColor(i, 0);     // залить
 //    strip.show();                         // отправить на ленту
 //    delay(10);                          // очистить
-//  } 
-  Serial.println("ESP32 clock started");  
+//  }
+  Serial.println("ESP32 clock started");
 }
 
 void loop() {
@@ -133,41 +110,27 @@ void loop() {
     setTime(RTC_hours, RTC_minutes, RTC_seconds, RTC_day, RTC_month, RTC_year);
     lastTimeRTCSync = millis();
   }
-  
-  static unsigned long lastTimeRTCSync2 = 0;
-  if (millis() - lastTimeRTCSync2 > 5000 || lastTimeRTCSync2 == 0) {
-    Serial.print("Voltage - ");
-    Serial.println(volt);
-//    Serial.print("PH_1 - ");
-//    Serial.println(analogRead(PH_1));
-//    Serial.print("PH_2 - ");
-//    Serial.println(analogRead(PH_2));
-//    Serial.println(dutyCycle);
-    int light = (analogRead(PH_2) + analogRead(PH_1)) / 2;
-    int desireVolt = map(light, 500, 2400, minVoltage, maxVoltage);
-    desireVolt = max(desireVolt, minVoltage);
-    desireVolt = min(desireVolt, maxVoltage);
-    Serial.println(light);
-    Serial.println(desireVolt);
-    aimVoltage = desireVolt;
-    lastTimeRTCSync2 = millis();
-  }
-  
-//  stringToDisplay = String(volt);
-  stringToDisplay = updateDisplayString();
-  doIndication();  
-  
+
+  adjustBrightness();
+
+ stringToDisplay = "00" + String(analogRead(voltPin));
+  // stringToDisplay = updateDisplayString();
+  doIndication();
+
   getDataGps();
-//  // WS2812   
-//  // заливаем трёмя цветами плавно
-//
-//    for (int i = 0; i < NUM_LEDS; i++ ) {   // от 0 до первой трети
-//    strip.setPixelColor(i, counter );     // залить 
-//    strip.show();                         // отправить на ленту
-//    delay(10);
-//
-//  }
-//  counter=counter+1000; 
+
+
+
+ // // WS2812
+ // // заливаем трёмя цветами плавно
+ //
+ //   for (int i = 0; i < NUM_LEDS; i++ ) {   // от 0 до первой трети
+ //   strip.setPixelColor(i, counter );     // залить
+ //   strip.show();                         // отправить на ленту
+ //   delay(10);
+ //
+ // }
+ // counter=counter+1000;
  }
 
  void doIndication() {
@@ -175,19 +138,19 @@ void loop() {
   static unsigned long lastTimeInterval1Started;
 
   digitalWrite(Toch, second() % 2 == 0);
-  if ((micros() - lastTimeInterval1Started) < 3000) 
+  if ((micros() - lastTimeInterval1Started) < 3000)
     return ;
   lastTimeInterval1Started = micros();
-  
+
   int anode = anodesSequence[anodesGroup];
   digitalWrite(anode, LOW);
   delayMicroseconds(600);
   anodesGroup = (anodesGroup + 1) % lampsCount;
-  
+
   anode = anodesSequence[anodesGroup];
   i = stringToDisplay.substring(anodesGroup + 2, anodesGroup + 2 + 1).toInt();
   setNumber(i);
-  
+
   digitalWrite(anode, HIGH);
  }
 
@@ -279,16 +242,16 @@ time_t ukraineTime() {
   static Timezone uaUkraine(uaSummer, uaWinter);
   static int lastCorrectedHour = -1;
   static time_t deltaTime = 0;
-  
+
   time_t utc = now();
 
   if (lastCorrectedHour != hour()) {
     TimeChangeRule *tcr;
     lastCorrectedHour = hour();
-    time_t tmpTime = uaUkraine.toLocal(utc, &tcr);
+    uaUkraine.toLocal(utc, &tcr);
     deltaTime = tcr -> offset * 60;
   }
-  
+
   return utc + deltaTime;
 }
 
@@ -366,4 +329,3 @@ void setNumber(int num)
       break;
   }
 }
- 
