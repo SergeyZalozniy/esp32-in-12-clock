@@ -1,13 +1,13 @@
-#include <TinyGPS.h>
+#include <TinyGPS++.h>
 #include <ArduinoOTA.h>
 #include <WiFiUdp.h>
-#include <Wire.h>
 #include <Timezone.h>
 #include <TimeLib.h>
 #include <Adafruit_NeoPixel.h>
 #include <ESP32TimerInterrupt.h>
 
 #include "Constants.h"
+#include "RealTimeClock.h"
 #include "Brightness.h"
 
 int RTC_hours, RTC_minutes, RTC_seconds, RTC_day, RTC_month, RTC_year, RTC_day_of_week;
@@ -38,7 +38,7 @@ String stringToDisplay = "123456";
 int anodesSequence[4] = {Anod_1, Anod_2, Anod_3, Anod_4};
 
 #define gpsSerial Serial2
-TinyGPS gps;
+TinyGPSPlus gps;
 
 char inputString[2];
 
@@ -46,10 +46,6 @@ int i = 0;
 
 void doIndication();
 void getDataGps();
-void setRTCDateTime(byte h, byte m, byte s, byte d, byte mon, byte y, byte w);
-byte decToBcd(byte val);
-byte bcdToDec(byte val);
-void getRTCTime();
 String updateDisplayString();
 String getTimeNow();
 time_t ukraineTime();
@@ -66,7 +62,7 @@ void setup(){
   ledcAttachPin(PWMPin, PWMChannel);
   ledcWrite(PWMChannel, defaultDuty);
 
-  Wire.begin(I2C_SDA, I2C_SCL);
+  setupRTC();
 
   //устанавливаем режим Input Output
   pinMode(A, OUTPUT);
@@ -87,50 +83,46 @@ void setup(){
 
   Serial.begin(115200);
 
-  if (ITimer0.attachInterruptInterval(TIMER0_INTERVAL_MS , TimerHandler0))
-  Serial.println("Starting  ITimer0 OK, millis() = " + String(millis()));
-else
-  Serial.println("Can't set ITimer0. Select another freq. or timer");
+  // if (ITimer0.attachInterruptInterval(TIMER0_INTERVAL_MS , TimerHandler0))
+  //   Serial.println("Starting  ITimer0 OK, millis() = " + String(millis()));
+  // else
+  //   Serial.println("Can't set ITimer0. Select another freq. or timer");
 
   //WS2812
-//  strip.begin();
-//  strip.setBrightness(50);    // яркость, от 0 до 255
-//  for (int i = 0; i < NUM_LEDS; i++ ) {   // от 0 до первой трети
-//    strip.setPixelColor(i, 0);     // залить
-//    strip.show();                         // отправить на ленту
-//    delay(10);                          // очистить
-//  }
+ strip.begin();
+ strip.setBrightness(255);    // яркость, от 0 до 255
+ for (int i = 0; i < NUM_LEDS; i++ ) {   // от 0 до первой трети
+   strip.setPixelColor(i, 0xffffff);     // залить
+   strip.show();                         // отправить на ленту
+   delay(10);                          // очистить
+ }
   Serial.println("ESP32 clock started");
 }
 
 void loop() {
   static unsigned long lastTimeRTCSync = 0;
+    // Serial.println("ESP32 clock started");
   if (millis() - lastTimeRTCSync > 10000 || lastTimeRTCSync == 0) {
-    getRTCTime();
+    getRTCTime(RTC_seconds, RTC_minutes, RTC_hours, RTC_day_of_week, RTC_day, RTC_month, RTC_year);
+    // Serial.print(RTC_minutes);
+    // Serial.print(":");
+    // Serial.println(RTC_seconds);
+    Serial.println(analogRead(voltPin));
     setTime(RTC_hours, RTC_minutes, RTC_seconds, RTC_day, RTC_month, RTC_year);
     lastTimeRTCSync = millis();
   }
 
   adjustBrightness();
 
- stringToDisplay = "00" + String(analogRead(voltPin));
-  // stringToDisplay = updateDisplayString();
+ // stringToDisplay = "00" + String(analogRead(voltPin));
+  stringToDisplay = updateDisplayString();
+
   doIndication();
 
+  TimerHandler0();
+  adjustBrightness();
+
   getDataGps();
-
-
-
- // // WS2812
- // // заливаем трёмя цветами плавно
- //
- //   for (int i = 0; i < NUM_LEDS; i++ ) {   // от 0 до первой трети
- //   strip.setPixelColor(i, counter );     // залить
- //   strip.show();                         // отправить на ленту
- //   delay(10);
- //
- // }
- // counter=counter+1000;
  }
 
  void doIndication() {
@@ -152,72 +144,52 @@ void loop() {
   setNumber(i);
 
   digitalWrite(anode, HIGH);
- }
-
+}
 
 void getDataGps() {
- static unsigned long lastTimeGPSSync=0;
+ static unsigned long lastTimeGPSSync = 0;
  while (gpsSerial.available() > 0){
-    if (gps.encode(gpsSerial.read())) {
+    char c = gpsSerial.read();
+    
+    if (gps.encode(c)) {
       if (((millis())-lastTimeGPSSync) < 60000) {
         return ;
       }
-      Serial.println("GPSTime Sync");
-      lastTimeGPSSync=millis();
-      byte month, day, hour, minute, second, hundredths;
-      int year;
-      unsigned long age;
-      gps.crack_datetime(&year, &month, &day, &hour, &minute, &second, &hundredths, &age);
-      setRTCDateTime(hour, minute, second, second, month, year, 0);
+
+      TinyGPSDate date = gps.date;
+      TinyGPSTime time = gps.time;
+
+      if (!time.isValid() || !date.isValid()) {
+        return ;
+      }
+
+      byte hour = time.hour();
+      byte minute = time.minute();
+      byte second = time.second();
+
+      byte day = date.day();
+      byte month = date.month();
+      int year = date.year();
+
+      setRTCDateTime(hour, minute, second, day, month, year, 0);
+
+      Serial.print("GPSTime Sync - ");
+      Serial.print(hour);
+      Serial.print(":");
+      Serial.print(minute);
+      Serial.print(":");
+      Serial.print(second);
+      Serial.print(" ### ");
+
+      Serial.print(day);
+      Serial.print("/");
+      Serial.print(month);
+      Serial.print("/");
+      Serial.println(year);
+      lastTimeGPSSync = millis();
     }
   }
 }
-
-
-void setRTCDateTime(byte h, byte m, byte s, byte d, byte mon, byte y, byte w)
-{
-  Wire.beginTransmission(DS1307_ADDRESS);
-  Wire.write(zero); //stop Oscillator
-
-  Wire.write(decToBcd(s));
-  Wire.write(decToBcd(m));
-  Wire.write(decToBcd(h));
-  Wire.write(decToBcd(w));
-  Wire.write(decToBcd(d));
-  Wire.write(decToBcd(mon));
-  Wire.write(decToBcd(y));
-
-  Wire.write(zero); //start
-
-  Wire.endTransmission();
-
-}
-
-byte decToBcd(byte val) {
-  return ( (val / 10 * 16) + (val % 10) );
-}
-
-byte bcdToDec(byte val)  {
-  return ( (val / 16 * 10) + (val % 16) );
-}
-
-void getRTCTime()
-{
-  Wire.beginTransmission(DS1307_ADDRESS);
-  Wire.write(zero);
-  Wire.endTransmission();
-
-  Wire.requestFrom(DS1307_ADDRESS, 7);
-
-  RTC_seconds = bcdToDec(Wire.read());
-  RTC_minutes = bcdToDec(Wire.read());
-  RTC_hours = bcdToDec(Wire.read() & 0b111111); //24 hour time
-  RTC_day_of_week = bcdToDec(Wire.read()); //0-6 -> sunday - Saturday
-  RTC_day = bcdToDec(Wire.read());
-  RTC_month = bcdToDec(Wire.read());
-  RTC_year = bcdToDec(Wire.read());
-}
-
 
 String updateDisplayString()
 {

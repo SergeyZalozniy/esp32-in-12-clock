@@ -31,5 +31,5 @@ void adjustBrightness() {
   desireVolt = max(desireVolt, minVoltage);
   desireVolt = min(desireVolt, maxVoltage);
 
-  aimVoltage = 2050;
+  aimVoltage = desireVolt;
 }
