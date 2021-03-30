@@ -2,12 +2,29 @@
 #include <Wire.h>
 
 #include "Constants.h"
+#include "RealTimeClock.h"
+
+#define DS1307_ADDRESS 0x68
+#define zero 0x00
 
 byte decToBcd(byte val);
 byte bcdToDec(byte val);
 
 void setupRTC() {
-  Wire.begin(I2C_SDA, I2C_SCL);
+  Wire.begin(i2csDataPin, i2csClockPin);
+}
+
+void syncRTCWithInternalTime() {
+  static unsigned long lastTimeRTCSync = 0;
+  if (millis() - lastTimeRTCSync < 10000 && lastTimeRTCSync != 0) {
+    return ;
+  }
+
+  byte hours, minutes, seconds, day, month, year, dayOfWeek;
+  getRTCTime(seconds, minutes, hours, dayOfWeek, day, month, year);    
+  setTime((int)hours, (int)minutes, (int)seconds, (int)day, (int)month, (int)year);
+
+  lastTimeRTCSync = millis();
 }
 
 void setRTCDateTime(byte h, byte m, byte s, byte d, byte mon, byte y, byte w) {
@@ -27,7 +44,7 @@ void setRTCDateTime(byte h, byte m, byte s, byte d, byte mon, byte y, byte w) {
   Wire.endTransmission();
 }
 
-void getRTCTime(int &seconds, int &minutes, int &hours, int &dayOfWeek, int &day, int &month, int &year) {
+void getRTCTime(byte &seconds, byte &minutes, byte &hours, byte &dayOfWeek, byte &day, byte &month, byte &year) {
   Wire.beginTransmission(DS1307_ADDRESS);
   Wire.write(zero);
   Wire.endTransmission();

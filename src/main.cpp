@@ -1,303 +1,135 @@
-#include <TinyGPS++.h>
-#include <ArduinoOTA.h>
-#include <WiFiUdp.h>
-#include <Timezone.h>
-#include <TimeLib.h>
 #include <Adafruit_NeoPixel.h>
-#include <ESP32TimerInterrupt.h>
+#include <WiFiManager.h>
 
 #include "Constants.h"
 #include "RealTimeClock.h"
 #include "Brightness.h"
+#include "GPSTime.h"
+#include "Indication.h"
+#include "LocalTime.h"
 
-int RTC_hours, RTC_minutes, RTC_seconds, RTC_day, RTC_month, RTC_year, RTC_day_of_week;
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, WS_PIN, NEO_GRB + NEO_KHZ800);
+enum ClockState { 
+  time,
+  transition,
+  date
+};
 
-// the number of the PWM pin
-const int PWMPin = 13;  // GPIO23
+Adafruit_NeoPixel strip = Adafruit_NeoPixel(stripLedCount, ledStripPin, NEO_RGB + NEO_KHZ800);
+String getStringToDisplay(bool &dots);
+String getTransitionStep(String from, String to, byte iteration);
 
-// Пины выводов управления дешифратором
-int A = 15;
-int B = 5;
-int C = 18;
-int D = 19;
-//Анод 1
-int Anod_1 = 26;
-//Анод 2
-int Anod_2 = 25;
-//Анод 3
-int Anod_3 = 33;
-//Анод 4
-int Anod_4 = 32;
-//Точки между сигментами
-int Toch = 14;
+ClockState state = time;
 
-// Строка для отображения
-String stringToDisplay = "123456";
-// аноды по порядку hh:mm:ss
-int anodesSequence[4] = {Anod_1, Anod_2, Anod_3, Anod_4};
-
-#define gpsSerial Serial2
-TinyGPSPlus gps;
-
-char inputString[2];
-
-int i = 0;
-
-void doIndication();
-void getDataGps();
-String updateDisplayString();
-String getTimeNow();
-time_t ukraineTime();
-String PreZero(int digit);
-void setNumber(int num);
-
-ESP32Timer ITimer0(0);
-#define TIMER0_INTERVAL_MS  4000
+WiFiManager wifiManager;
 
 void setup(){
-  // configure PWM functionalitites
-  ledcSetup(PWMChannel, freq, resolution);
-  // attach the channel to the GPIO to be controlled
-  ledcAttachPin(PWMPin, PWMChannel);
-  ledcWrite(PWMChannel, defaultDuty);
-
+  setupBrightness();
   setupRTC();
-
-  //устанавливаем режим Input Output
-  pinMode(A, OUTPUT);
-  pinMode(B, OUTPUT);
-  pinMode(C, OUTPUT);
-  pinMode(D, OUTPUT);
-  pinMode(voltPin, INPUT);
-  pinMode(lighSensor1Pin, INPUT);
-  pinMode(lighSensor2Pin, INPUT);
-
-  pinMode(Anod_1, OUTPUT);
-  pinMode(Anod_2, OUTPUT);
-  pinMode(Anod_3, OUTPUT);
-  pinMode(Anod_4, OUTPUT);
-  pinMode(Toch, OUTPUT);
-
-  gpsSerial.begin(9600);
+  setupGPS();
+  setupIndication();
 
   Serial.begin(115200);
 
-  // if (ITimer0.attachInterruptInterval(TIMER0_INTERVAL_MS , TimerHandler0))
-  //   Serial.println("Starting  ITimer0 OK, millis() = " + String(millis()));
-  // else
-  //   Serial.println("Can't set ITimer0. Select another freq. or timer");
-
-  //WS2812
- strip.begin();
- strip.setBrightness(255);    // яркость, от 0 до 255
- for (int i = 0; i < NUM_LEDS; i++ ) {   // от 0 до первой трети
-   strip.setPixelColor(i, 0xffffff);     // залить
-   strip.show();                         // отправить на ленту
-   delay(10);                          // очистить
- }
+  strip.begin();
+  strip.setBrightness(255);    // яркость, от 0 до 255
+  for (int i = 0; i < stripLedCount; i++ ) {   // от 0 до первой трети
+    strip.setPixelColor(i, 0);     // залить
+  }
+  strip.show();                         // отправить на ленту
+  delay(10);                          // очистить
   Serial.println("ESP32 clock started");
+  wifiManager.autoConnect("Clock", "nixie");
 }
 
 void loop() {
-  static unsigned long lastTimeRTCSync = 0;
-    // Serial.println("ESP32 clock started");
-  if (millis() - lastTimeRTCSync > 10000 || lastTimeRTCSync == 0) {
-    getRTCTime(RTC_seconds, RTC_minutes, RTC_hours, RTC_day_of_week, RTC_day, RTC_month, RTC_year);
-    // Serial.print(RTC_minutes);
-    // Serial.print(":");
-    // Serial.println(RTC_seconds);
-    Serial.println(analogRead(voltPin));
-    setTime(RTC_hours, RTC_minutes, RTC_seconds, RTC_day, RTC_month, RTC_year);
-    lastTimeRTCSync = millis();
-  }
+  syncRTCWithInternalTime();
+  bool dots = false;
+  String stringToDisplay = getStringToDisplay(dots);
+
+  doIndication(stringToDisplay, dots);
 
   adjustBrightness();
-
- // stringToDisplay = "00" + String(analogRead(voltPin));
-  stringToDisplay = updateDisplayString();
-
-  doIndication();
-
-  TimerHandler0();
-  adjustBrightness();
-
-  getDataGps();
- }
-
- void doIndication() {
-  static byte anodesGroup = 0;
-  static unsigned long lastTimeInterval1Started;
-
-  digitalWrite(Toch, second() % 2 == 0);
-  if ((micros() - lastTimeInterval1Started) < 3000)
-    return ;
-  lastTimeInterval1Started = micros();
-
-  int anode = anodesSequence[anodesGroup];
-  digitalWrite(anode, LOW);
-  delayMicroseconds(600);
-  anodesGroup = (anodesGroup + 1) % lampsCount;
-
-  anode = anodesSequence[anodesGroup];
-  i = stringToDisplay.substring(anodesGroup + 2, anodesGroup + 2 + 1).toInt();
-  setNumber(i);
-
-  digitalWrite(anode, HIGH);
+  syncGPSTimeWithRTC();
 }
 
-void getDataGps() {
- static unsigned long lastTimeGPSSync = 0;
- while (gpsSerial.available() > 0){
-    char c = gpsSerial.read();
-    
-    if (gps.encode(c)) {
-      if (((millis())-lastTimeGPSSync) < 60000) {
-        return ;
+String getStringToDisplay(bool &dots) {
+  static String currentStringToDisplay = "";
+  static ClockState transitionToState;
+  static unsigned long lastTimeStateChanged = 0;
+
+  switch (state) {
+  case time:
+    if (millis() - lastTimeStateChanged > 10000)  {
+      state = transition;
+      transitionToState = date;
+      lastTimeStateChanged = millis();
+    }
+    currentStringToDisplay = getCachedTimeString();
+    dots = second() % 2;
+    break;
+  case transition: {
+    static byte iteration = 0;
+    static unsigned long lastTimeTransitionIteration = 0;
+    dots = true;
+    if (millis() - lastTimeTransitionIteration < 90)  {
+      return currentStringToDisplay;
+    }
+
+    String toValue = "";
+    switch (transitionToState) {
+    case time:
+      toValue = getCachedTimeString();
+      break;
+    case date:
+      toValue = getCachedDateString();
+      break;
+    default:
+      break;
+    }
+    currentStringToDisplay = getTransitionStep(currentStringToDisplay, toValue, iteration);
+    iteration++;
+    lastTimeTransitionIteration = millis();
+    if (currentStringToDisplay == toValue) {
+      state = transitionToState;
+      iteration = 0;
+      lastTimeStateChanged = millis();
+    }
+
+    break;
+  }
+  case date:
+     if (millis() - lastTimeStateChanged > 5000)  {
+      state = transition;
+      transitionToState = time;
+      lastTimeStateChanged = millis();
+    }
+    currentStringToDisplay = getCachedDateString();
+    dots = true;
+    break;
+  }
+
+  return currentStringToDisplay;
+} 
+
+String getTransitionStep(String from, String to, byte iteration) {
+  if (from.length() != to.length()) {
+    return from;
+  }
+  int count = from.length();
+  String result = "";
+  byte divChar = '9' + 1;
+  for (int i = 0; i < count; i++) {
+    byte curFrom = from[i];
+    byte curTo = to[i];
+    if (curFrom == curTo && iteration > 10) {
+      result += char(curFrom);
+    } else {
+      if (curFrom == '9') {
+        result += '0';
+      } else {
+        result += char((curFrom + 1) % divChar);
       }
-
-      TinyGPSDate date = gps.date;
-      TinyGPSTime time = gps.time;
-
-      if (!time.isValid() || !date.isValid()) {
-        return ;
-      }
-
-      byte hour = time.hour();
-      byte minute = time.minute();
-      byte second = time.second();
-
-      byte day = date.day();
-      byte month = date.month();
-      int year = date.year();
-
-      setRTCDateTime(hour, minute, second, day, month, year, 0);
-
-      Serial.print("GPSTime Sync - ");
-      Serial.print(hour);
-      Serial.print(":");
-      Serial.print(minute);
-      Serial.print(":");
-      Serial.print(second);
-      Serial.print(" ### ");
-
-      Serial.print(day);
-      Serial.print("/");
-      Serial.print(month);
-      Serial.print("/");
-      Serial.println(year);
-      lastTimeGPSSync = millis();
     }
   }
-}
-
-String updateDisplayString()
-{
-  static unsigned long lastTimeStringWasUpdated;
-  if (millis() - lastTimeStringWasUpdated > 1000 || lastTimeStringWasUpdated == 0)
-  {
-    lastTimeStringWasUpdated = millis();
-    return getTimeNow();
-  }
-  return stringToDisplay;
-}
-
-String getTimeNow()
-{
-  time_t adjustedTime = ukraineTime();
-  return PreZero(hour(adjustedTime)) + PreZero(minute(adjustedTime)) + PreZero(second(adjustedTime));
-}
-
-time_t ukraineTime() {
-  static TimeChangeRule uaSummer = {"EDT", Last, Sun, Mar, 3, 180};  //UTC + 3 hours
-  static TimeChangeRule uaWinter = {"EST", Last, Sun, Oct, 4, 120};  //UTC + 2 hours
-  static Timezone uaUkraine(uaSummer, uaWinter);
-  static int lastCorrectedHour = -1;
-  static time_t deltaTime = 0;
-
-  time_t utc = now();
-
-  if (lastCorrectedHour != hour()) {
-    TimeChangeRule *tcr;
-    lastCorrectedHour = hour();
-    uaUkraine.toLocal(utc, &tcr);
-    deltaTime = tcr -> offset * 60;
-  }
-
-  return utc + deltaTime;
-}
-
-String PreZero(int digit)
-{
-  digit=abs(digit);
-  if (digit < 10) return String("0") + String(digit);
-  else return String(digit);
-}
-
-// Функцтя передачи цифры на дешифратор
-void setNumber(int num)
-{
-  switch (num)
-  {
-    case 0:
-      digitalWrite (A, LOW);
-      digitalWrite (B, LOW);
-      digitalWrite (C, LOW);
-      digitalWrite (D, HIGH);
-      break;
-    case 9:
-      digitalWrite (A, LOW);
-      digitalWrite (B, LOW);
-      digitalWrite (C, LOW);
-      digitalWrite (D, LOW);
-      break;
-    case 8:
-      digitalWrite (A, HIGH);
-      digitalWrite (B, HIGH);
-      digitalWrite (C, HIGH);
-      digitalWrite (D, LOW);
-      break;
-    case 7:
-      digitalWrite (A, HIGH);
-      digitalWrite (B, LOW);
-      digitalWrite (C, LOW);
-      digitalWrite (D, HIGH);
-      break;
-    case 6:
-      digitalWrite (A, HIGH);
-      digitalWrite (B, LOW);
-      digitalWrite (C, HIGH);
-      digitalWrite (D, LOW);
-      break;
-    case 5:
-      digitalWrite (A, LOW);
-      digitalWrite (B, HIGH);
-      digitalWrite (C, HIGH);
-      digitalWrite (D, LOW);
-      break;
-    case 4:
-      digitalWrite (A, LOW);
-      digitalWrite (B, LOW);
-      digitalWrite (C, HIGH);
-      digitalWrite (D, LOW);
-      break;
-    case 3:
-      digitalWrite (A, LOW);
-      digitalWrite (B, HIGH);
-      digitalWrite (C, LOW);
-      digitalWrite (D, LOW);
-      break;
-    case 2:
-      digitalWrite (A, HIGH );
-      digitalWrite (B, LOW);
-      digitalWrite (C, LOW);
-      digitalWrite (D, LOW);
-      break;
-    case 1:
-      digitalWrite (A, HIGH);
-      digitalWrite (B, HIGH);
-      digitalWrite (C, LOW);
-      digitalWrite (D, LOW);
-      break;
-  }
+  return result;
 }
