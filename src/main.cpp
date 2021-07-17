@@ -15,7 +15,7 @@ enum ClockState {
 };
 
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(stripLedCount, ledStripPin, NEO_RGB + NEO_KHZ800);
-String getStringToDisplay(bool &dots);
+String getStringToDisplay(bool &lowDot, bool &upDot);
 String getTransitionStep(String from, String to, byte iteration);
 
 ClockState state = time;
@@ -43,16 +43,17 @@ void setup(){
 
 void loop() {
   syncRTCWithInternalTime();
-  bool dots = false;
-  String stringToDisplay = getStringToDisplay(dots);
+  bool lowDot = false;
+  bool upDot = false;
+  String stringToDisplay = getStringToDisplay(lowDot, upDot);
 
-  doIndication(stringToDisplay, dots);
+  doIndication(stringToDisplay, lowDot, upDot);
 
   adjustBrightness();
   syncGPSTimeWithRTC();
 }
 
-String getStringToDisplay(bool &dots) {
+String getStringToDisplay(bool &lowDot, bool &upDot) {
   static String currentStringToDisplay = "";
   static ClockState transitionToState;
   static unsigned long lastTimeStateChanged = 0;
@@ -65,12 +66,14 @@ String getStringToDisplay(bool &dots) {
       lastTimeStateChanged = millis();
     }
     currentStringToDisplay = getCachedTimeString();
-    dots = second() % 2;
+    lowDot = second() % 2;
+    upDot = second() % 2;
     break;
   case transition: {
     static byte iteration = 0;
     static unsigned long lastTimeTransitionIteration = 0;
-    dots = true;
+    lowDot = false;
+    upDot = true;
     if (millis() - lastTimeTransitionIteration < 90)  {
       return currentStringToDisplay;
     }
@@ -104,7 +107,8 @@ String getStringToDisplay(bool &dots) {
       lastTimeStateChanged = millis();
     }
     currentStringToDisplay = getCachedDateString();
-    dots = true;
+    lowDot = false;
+    upDot = true;
     break;
   }
 
