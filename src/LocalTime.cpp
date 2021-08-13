@@ -38,14 +38,14 @@ time_t getLocalTime() {
     static int lastCorrectedHour = -1;
     static time_t deltaTime = 0;
 
-    TimeChangeRule uaSummer = {"EDT", Last, Sun, Mar, 3, 180};  //UTC + 3 hours
-    TimeChangeRule uaWinter = {"EST", Last, Sun, Oct, 4, 120};  //UTC + 2 hours
-    Timezone uaUkraine(uaSummer, uaWinter);
+    TimeChangeRule uaSummer = {"EDT", Last, Sun, Mar, 2, 120};  // UTC + 2 hours
+    TimeChangeRule uaWinter = {"EST", Last, Sun, Oct, 3, 60};  // UTC + 1 hours
+    Timezone localTimezone(uaSummer, uaWinter);
 
     time_t utc = now();
 
     if (lastCorrectedHour != hour()) {
-        time_t localTime = uaUkraine.toLocal(utc);
+        time_t localTime = localTimezone.toLocal(utc);
         deltaTime = localTime - utc;
         lastCorrectedHour = hour();
     }
