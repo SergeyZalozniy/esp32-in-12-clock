@@ -1,5 +1,5 @@
 #include <Adafruit_NeoPixel.h>
-#include <WiFiManager.h>
+#include <EEPROM.h>
 
 #include "Constants.h"
 #include "RealTimeClock.h"
@@ -7,6 +7,8 @@
 #include "GPSTime.h"
 #include "Indication.h"
 #include "LocalTime.h"
+#include "WifiInit.h"
+#include "WebService.h"
 
 enum ClockState { 
   time,
@@ -20,15 +22,16 @@ String getTransitionStep(String from, String to, byte iteration);
 
 ClockState state = time;
 
-WiFiManager wifiManager;
-
 void setup(){
+  Serial.begin(115200);
+  EEPROM.begin(512);
+
   setupBrightness();
   setupRTC();
   setupGPS();
   setupIndication();
-
-  Serial.begin(115200);
+  setupWifi();
+  setupWebServer();
 
   strip.begin();
   strip.setBrightness(255);    // яркость, от 0 до 255
@@ -37,11 +40,11 @@ void setup(){
   }
   strip.show();                         // отправить на ленту
   delay(10);                          // очистить
-  Serial.println("ESP32 clock started");
-  wifiManager.autoConnect("Clock", "nixie");
+  Serial.println("Clock started");
 }
 
 void loop() {
+  handleClient();
   syncRTCWithInternalTime();
   bool lowDot = false;
   bool upDot = false;

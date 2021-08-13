@@ -1,10 +1,11 @@
 const int stripLedCount = 4;  // число диодов
 const int lampsCount = 4; // Количество ламп
 
+const String wifiName = "Nixie Clock";
 
 /* #### esp32 PINs  #### */
 
-#define VERSION_2
+#define VERSION_FIRST
 
 #ifdef VERSION_FIRST
     const int voltPin = 34; // Напряжение Анода
