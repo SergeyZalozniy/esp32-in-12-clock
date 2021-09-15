@@ -31,12 +31,12 @@
   #endif
 
   digitalWrite(toch, lowDot);
-  if ((micros() - lastTimeInterval1Started) < 3000)
+  if ((micros() - lastTimeInterval1Started) < 2500)
     return ;
 
   int anode = anodesSequence[anodesGroup];
   digitalWrite(anode, LOW);
-  delayMicroseconds(600);
+  delayMicroseconds(500);
   anodesGroup = (anodesGroup + 1) % lampsCount;
 
   anode = anodesSequence[anodesGroup];

@@ -21,8 +21,8 @@ void setupWifi() {
 
 	String ssid = readWifiSSID();
 	String password = readWifiPassword();
-
-	if (ssid == "" && password == "") {
+	boolean hasPassword = (ssid != "" && password != "");
+	if (!hasPassword) {
 		WiFi.begin();
 	} else {
 		WiFi.begin(ssid.c_str(), password.c_str());
@@ -34,7 +34,7 @@ void setupWifi() {
 	Serial.print("Password - ");
 	Serial.println(password);
 
-	while (--tries && WiFi.status() != WL_CONNECTED) {
+	while (hasPassword && --tries && WiFi.status() != WL_CONNECTED) {
 		Serial.print(".");
 		delay(1000);
 	}

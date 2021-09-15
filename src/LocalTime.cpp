@@ -38,8 +38,8 @@ time_t getLocalTime() {
     static int lastCorrectedHour = -1;
     static time_t deltaTime = 0;
 
-    TimeChangeRule uaSummer = {"EDT", Last, Sun, Mar, 2, 120};  // UTC + 2 hours
-    TimeChangeRule uaWinter = {"EST", Last, Sun, Oct, 3, 60};  // UTC + 1 hours
+    TimeChangeRule uaSummer = {"EDT", Last, Sun, Mar, 2, 180};  // UTC + 3 hours
+    TimeChangeRule uaWinter = {"EST", Last, Sun, Oct, 3, 120};  // UTC + 2 hours
     Timezone localTimezone(uaSummer, uaWinter);
 
     time_t utc = now();

@@ -12,53 +12,39 @@ WiFiUDP ntpUDP;
 File fsUploadFile;
 WebServer server(80);
 
-
 void HTTP_init();
 
 void setupWebServer() {
     SPIFFS.begin();
 
-    if (MDNS.begin("nixie"))
-    {
+    if (MDNS.begin("nixie")) {
         Serial.println("MDNS responder started");
         MDNS.addService("http", "tcp", 80);
         MDNS.addService("ws", "tcp", 81);
-    }
-    else
-    {
+    } else {
         Serial.println("MDNS.begin failed");
     }
 
     HTTP_init();
 }
 
-
 void handleClient() {
     server.handleClient();
 }
 
-String formatBytes(size_t bytes)
-{
-    if (bytes < 1024)
-    {
+String formatBytes(size_t bytes) {
+    if (bytes < 1024) {
         return String(bytes) + "B";
-    }
-    else if (bytes < (1024 * 1024))
-    {
+    } else if (bytes < (1024 * 1024)) {
         return String(bytes / 1024.0) + "KB";
-    }
-    else if (bytes < (1024 * 1024 * 1024))
-    {
+    } else if (bytes < (1024 * 1024 * 1024)) {
         return String(bytes / 1024.0 / 1024.0) + "MB";
-    }
-    else
-    {
+    } else {
         return String(bytes / 1024.0 / 1024.0 / 1024.0) + "GB";
     }
 }
 
-String getContentType(String filename)
-{
+String getContentType(String filename) {
     if (server.hasArg("download"))
         return "application/octet-stream";
     else if (filename.endsWith(".htm"))
@@ -102,15 +88,12 @@ String getContentType(String filename)
     return "text/plain";
 }
 
-bool handleFileRead(String path)
-{
-    //Serial.println("handleFileRead: " + path);
+bool handleFileRead(String path) {
     if (path.endsWith("/"))
         path += "index.htm";
     String contentType = getContentType(path);
     String pathWithGz = path + ".gz";
-    if (SPIFFS.exists(pathWithGz) || SPIFFS.exists(path))
-    {
+    if (SPIFFS.exists(pathWithGz) || SPIFFS.exists(path)) {
         if (SPIFFS.exists(pathWithGz))
             path += ".gz";
         File file = SPIFFS.open(path, "r");
@@ -121,13 +104,11 @@ bool handleFileRead(String path)
     return false;
 }
 
-void handleFileUpload()
-{
+void handleFileUpload() {
     if (server.uri() != "/edit")
         return;
     HTTPUpload &upload = server.upload();
-    if (upload.status == UPLOAD_FILE_START)
-    {
+    if (upload.status == UPLOAD_FILE_START) {
         String filename = upload.filename;
         if (!filename.startsWith("/"))
             filename = "/" + filename;
@@ -135,15 +116,10 @@ void handleFileUpload()
         Serial.println(filename);
         fsUploadFile = SPIFFS.open(filename, "w");
         filename = String();
-    }
-    else if (upload.status == UPLOAD_FILE_WRITE)
-    {
-        //Serial.print("handleFileUpload Data: "); Serial.println(upload.currentSize);
+    } else if (upload.status == UPLOAD_FILE_WRITE) {
         if (fsUploadFile)
             fsUploadFile.write(upload.buf, upload.currentSize);
-    }
-    else if (upload.status == UPLOAD_FILE_END)
-    {
+    } else if (upload.status == UPLOAD_FILE_END) {
         if (fsUploadFile)
             fsUploadFile.close();
         Serial.print("handleFileUpload Size: ");
@@ -151,8 +127,7 @@ void handleFileUpload()
     }
 }
 
-void handleFileDelete()
-{
+void handleFileDelete() {
     if (server.args() == 0)
         return server.send(500, "text/plain", "BAD ARGS");
     String path = server.arg(0);
@@ -166,8 +141,7 @@ void handleFileDelete()
     path = String();
 }
 
-void handleFileCreate()
-{
+void handleFileCreate() {
     if (server.args() == 0)
         return server.send(500, "text/plain", "BAD ARGS");
     String path = server.arg(0);
@@ -185,10 +159,8 @@ void handleFileCreate()
     path = String();
 }
 
-void handleFileList()
-{
-    if (!server.hasArg("dir"))
-    {
+void handleFileList() {
+    if (!server.hasArg("dir")) {
         server.send(500, "text/plain", "BAD ARGS");
         return;
     }
@@ -200,8 +172,7 @@ void handleFileList()
 
     File entry = dir.openNextFile();
     String output = "[";
-    while (entry)
-    {
+    while (entry) {
         if (output != "[")
             output += ',';
         bool isDir = false;
@@ -219,8 +190,7 @@ void handleFileList()
     server.send(200, "text/json", output);
 }
 
-void handleNotFound()
-{
+void handleNotFound() {
     String message = "File Not Found\n\n";
     message += "URI: ";
     message += server.uri();
@@ -229,15 +199,13 @@ void handleNotFound()
     message += "\nArguments: ";
     message += server.args();
     message += "\n";
-    for (uint8_t i = 0; i < server.args(); i++)
-    {
+    for (uint8_t i = 0; i < server.args(); i++) {
         message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
     }
     server.send(404, "text/plain", message);
 }
 
-void HTTP_init()
-{
+void HTTP_init() {
     server.on("/config.json", HTTP_GET, []()
               { 
                 //   server.send(200, "application/json", configSetup);
@@ -283,65 +251,46 @@ void HTTP_init()
                   ESP.restart();  
               });
 
-    server.on("/", HTTP_POST, []()
+    server.on("/update", HTTP_POST, []()
         {
             server.sendHeader("Connection", "close");
             server.send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
             ESP.restart();
         },
-        []()
-        {
+        []() {
             HTTPUpload &upload = server.upload();
-            if (upload.status == UPLOAD_FILE_START)
-            {
+            if (upload.status == UPLOAD_FILE_START) {
                 Serial.printf("Update: %s\n", upload.filename.c_str());
-                if (!Update.begin(UPDATE_SIZE_UNKNOWN))
-                { //start with max available size
+                int type = server.arg("type").toInt();
+                if (!Update.begin(UPDATE_SIZE_UNKNOWN, type)) {
                     Update.printError(Serial);
                 }
-            }
-            else if (upload.status == UPLOAD_FILE_WRITE)
-            {
-                /* flashing firmware to ESP*/
-                if (Update.write(upload.buf, upload.currentSize) != upload.currentSize)
-                {
+            } else if (upload.status == UPLOAD_FILE_WRITE) {
+                if (Update.write(upload.buf, upload.currentSize) != upload.currentSize){
                     Update.printError(Serial);
                 }
-            }
-            else if (upload.status == UPLOAD_FILE_END)
-            {
-                if (Update.end(true))
-                { //true to set the size to the current progress
+            } else if (upload.status == UPLOAD_FILE_END) {
+                if (Update.end(true)) {
                     Serial.printf("Update Success: %u\nRebooting...\n", upload.totalSize);
-                }
-                else
-                {
+                } else {
                     Update.printError(Serial);
                 }
             }
         });
 
-    //create file
     server.on("/edit", HTTP_PUT, handleFileCreate);
-    //delete file
-    server.on("/edit", HTTP_DELETE, handleFileDelete);
-    //first callback is called after the request has ended with all parsed arguments
-    //second callback handles file uploads at that location
-    server.on(
-        "/edit", HTTP_POST, []()
-        { server.send(200, "text/plain", ""); },
-        handleFileUpload);
 
-    //called when the url is not defined here
-    //use it to load content from SPIFFS
+    server.on("/edit", HTTP_DELETE, handleFileDelete);
+    server.on("/edit", HTTP_POST, []() { 
+        server.send(200, "text/plain", ""); 
+        }, handleFileUpload);
+
     server.onNotFound(handleNotFound);
     server.serveStatic("/font", SPIFFS, "/font", "max-age=86400");
     server.serveStatic("/js", SPIFFS, "/js", "max-age=86400");
     server.serveStatic("/css", SPIFFS, "/css", "max-age=86400");
 
-    //get heap status, analog input value and all GPIO statuses in one json call
-    server.on("/all", HTTP_GET, []()
-              {
+    server.on("/all", HTTP_GET, []() {
                   String json = "{";
                   json += "\"heap\":" + String(ESP.getFreeHeap());
                   json += ", \"analog\":" + String(analogRead(A0));

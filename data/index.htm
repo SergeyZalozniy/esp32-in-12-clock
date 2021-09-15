@@ -26,7 +26,7 @@
 					<span class="icon-bar"></span>
 					<span class="icon-bar"></span>
 				</button>
-				<a class="navbar-brand" href="#">Nixie Clock</a>
+				<a class="navbar-brand" href="#">Nixie Clock v1.0</a>
 			</div>
 
 			<div class="collapse navbar-collapse">
@@ -39,41 +39,45 @@
 		</div>
 	</div>
 	<div class="container">
-		<form method="POST" enctype="multipart/form-data" id="upload_form">
-			<input type="file" name="update">
-			<input type="submit" value="Update">
-		</form>
-		<div id="prg">Progress: 0%</div>
-		<script>
-			$("form").submit(function (e) {
-				e.preventDefault();
-				var form = $("#upload_form")[0];
-				var data = new FormData(form);
-				$.ajax({
-					url: "/update",
-					type: "POST",
-					data: data,
-					contentType: false,
-					processData: false,
-					xhr: function () {
-						var xhr = new window.XMLHttpRequest();
-						xhr.upload.addEventListener("progress", function (evt) {
-							if (evt.lengthComputable) {
-								var per = evt.loaded / evt.total;
-								$("#prg").html("progress: " + Math.round(per * 100) + "%");
-							}
-						}, false);
-						return xhr;
-					},
-					success: function (d, s) {
-						console.log("success!")
-					},
-					error: function (a, b, c) {
-					}
-				});
-			});
-		</script>
-		<!-- <div class="starter-template">
+		<div class="starter-template">
+			<form method="POST" enctype="multipart/form-data" id="upload_form">
+
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						<h5>Fimvare / SPIFFS  update</h5>
+					</div>
+					<div class="panel-body">
+						<div class="form-group form-group-lg">
+							<input class="form-control" type="file" name="update">
+						</div>
+
+						<div class="progress" style="display: none;">
+							<div id="prg" class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+								Progress: <span>0%</span>
+							</div>
+						</div>
+
+						<div class="form-check" style="display: inline; margin-right: 15px;">
+							<input class="form-check-input" type="radio" name="upload-type" id="upload-type1" value="0" checked>
+							<label class="form-check-label" for="upload-type1">
+								Fimware
+							</label>
+						</div>
+						<div class="form-check" style="display: inline;">
+							<input class="form-check-input" type="radio" name="upload-type" id="upload-type2" value="100">
+							<label class="form-check-label" for="upload-type2">
+								SPIFFS
+							</label>
+						</div>
+
+						<div class="form-group form-group-lg" style="padding-top: 15px; margin: 0;">
+							<input class="btn btn-primary" type="submit" value="Update">
+						</div>
+					</div>
+				</div>
+			</form>
+
+<!-- 
 			<div class="panel panel-default">
 				<div class="panel-heading">
 					<h5>Выберите эффект смены цифр</h5>
@@ -148,9 +152,9 @@
 						</select>
 					</div>
 				</div>
-			</div>
+			</div> -->
 
-		</div> -->
+		</div>
 	</div>
 
 	<script src="js/jquery.min.js"></script>
@@ -160,6 +164,47 @@
 	<script src="js/bootstrap-switch.js"></script>
 	<script src="js/main.js"></script>
 
+	<script>
+
+		// $($("#prg")[0]).width(Math.round(.33 * 100) + "%");
+		// $($("#prg span")[0]).html(Math.round(.33 * 100) + "%");
+
+		$("form").submit(function (e) {
+			e.preventDefault();
+			var form = $("#upload_form")[0];
+			var uploadTypeValue = $('input[name=upload-type]:checked').val();
+			var data = new FormData(form);
+
+			$(".progress").css("display","block")
+
+			$.ajax({
+				url: "/update?type=" + uploadTypeValue,
+				type: "POST",
+				data: data,
+				contentType: false,
+				processData: false,
+				xhr: function () {
+					var xhr = new window.XMLHttpRequest();
+					xhr.upload.addEventListener("progress", function (evt) {
+						if (evt.lengthComputable) {
+							var per = evt.loaded / evt.total;
+							$($("#prg")[0]).width(Math.round(per * 100) + "%");
+							$($("#prg span")[0]).html(Math.round(per * 100) + "%");
+						}
+					}, false);
+					return xhr;
+				},
+				success: function (d, s) {
+					alert("Success!");
+					$(".progress").css("display","none");
+				},
+				error: function (a, b, c) {
+					alert("Failed!");
+					$(".progress").css("display","none");
+				}
+			});
+		});
+	</script>
 </body>
 
 </html>
