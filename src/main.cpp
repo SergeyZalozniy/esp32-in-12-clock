@@ -1,6 +1,8 @@
 #include <Adafruit_NeoPixel.h>
 #include <EEPROM.h>
 
+#include "TimeLib.h"
+
 #include "Constants.h"
 #include "RealTimeClock.h"
 #include "Brightness.h"
@@ -9,9 +11,10 @@
 #include "LocalTime.h"
 #include "WifiInit.h"
 #include "WebService.h"
+#include "NTPTime.h"
 
 enum ClockState { 
-  time,
+  timeState,
   transition,
   date
 };
@@ -20,7 +23,7 @@ Adafruit_NeoPixel strip = Adafruit_NeoPixel(stripLedCount, ledStripPin, NEO_RGB 
 String getStringToDisplay(bool &lowDot, bool &upDot);
 String getTransitionStep(String from, String to, byte iteration);
 
-ClockState state = time;
+ClockState state = timeState;
 
 void setup(){
   Serial.begin(115200);
@@ -36,7 +39,7 @@ void setup(){
   strip.begin();
   strip.setBrightness(255);    // яркость, от 0 до 255
   for (int i = 0; i < stripLedCount; i++ ) {   // от 0 до первой трети
-    strip.setPixelColor(i, 0);     // залить
+    strip.setPixelColor(i, 0xffffff);     // залить
   }
   strip.show();                         // отправить на ленту
   delay(10);                          // очистить
@@ -54,6 +57,7 @@ void loop() {
 
   adjustBrightness();
   syncGPSTimeWithRTC();
+  syncNTPTimeWithRTC();
 }
 
 String getStringToDisplay(bool &lowDot, bool &upDot) {
@@ -62,8 +66,8 @@ String getStringToDisplay(bool &lowDot, bool &upDot) {
   static unsigned long lastTimeStateChanged = 0;
 
   switch (state) {
-  case time:
-    if (millis() - lastTimeStateChanged > 10000)  {
+  case timeState:
+    if (millis() - lastTimeStateChanged > 65000)  {
       state = transition;
       transitionToState = date;
       lastTimeStateChanged = millis();
@@ -83,7 +87,7 @@ String getStringToDisplay(bool &lowDot, bool &upDot) {
 
     String toValue = "";
     switch (transitionToState) {
-    case time:
+    case timeState:
       toValue = getCachedTimeString();
       break;
     case date:
@@ -106,7 +110,7 @@ String getStringToDisplay(bool &lowDot, bool &upDot) {
   case date:
      if (millis() - lastTimeStateChanged > 5000)  {
       state = transition;
-      transitionToState = time;
+      transitionToState = timeState;
       lastTimeStateChanged = millis();
     }
     currentStringToDisplay = getCachedDateString();

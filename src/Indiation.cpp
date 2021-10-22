@@ -2,6 +2,10 @@
 
  #include "Constants.h"
 
+int anodesSequence[] = {anod1, anod2, anod3, anod4};
+unsigned long lastTimeInterval1Started = 0;
+byte anodesGroup = 0;
+
  void setNumber(int digit);
 
  void setupIndication() {
@@ -21,11 +25,8 @@
     #endif
  }
  
+ 
  void doIndication(String valueToDisplay, bool lowDot, bool upDot) {
-  int anodesSequence[] = {anod1, anod2, anod3, anod4};
-  static byte anodesGroup = 0;
-  static unsigned long lastTimeInterval1Started = 0;
-
   #ifdef VERSION_2
   digitalWrite(toch2, upDot);
   #endif
@@ -45,6 +46,11 @@
   digitalWrite(anode, HIGH);
 
   lastTimeInterval1Started = micros();
+}
+
+void turnOffIndication() {
+  int anode = anodesSequence[anodesGroup];
+  digitalWrite(anode, LOW);
 }
 
 void setNumber(int digit) {

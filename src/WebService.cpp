@@ -5,6 +5,8 @@
 #include <Update.h>
 #include <WebServer.h>
 
+#include "TimeLib.h"
+#include "Indication.h"
 #include "EEPROMHelper.h"
 
 WiFiUDP Udp;
@@ -97,7 +99,7 @@ bool handleFileRead(String path) {
         if (SPIFFS.exists(pathWithGz))
             path += ".gz";
         File file = SPIFFS.open(path, "r");
-        size_t sent = server.streamFile(file, contentType);
+        server.streamFile(file, contentType);
         file.close();
         return true;
     }
@@ -208,7 +210,13 @@ void handleNotFound() {
 void HTTP_init() {
     server.on("/config.json", HTTP_GET, []()
               { 
-                //   server.send(200, "application/json", configSetup);
+                struct tm timeinfo;
+                if (getLocalTime(&timeinfo, 1000)) {
+                    String res = String(timeinfo.tm_hour) + ":" + String(timeinfo.tm_min) + ":" + String(timeinfo.tm_sec) + " - " + String(timeinfo.tm_mday) + " \\ " + String(timeinfo.tm_mon) + " \\ " + String(timeinfo.tm_year) + " || " + String(timeinfo.tm_wday);
+                    server.send(200, "text/plain", res);
+                } else {
+                    server.send(200, "text/plain", "Fail");
+                }
                });
 
     server.on("/", HTTP_GET, []()
@@ -262,6 +270,7 @@ void HTTP_init() {
             if (upload.status == UPLOAD_FILE_START) {
                 Serial.printf("Update: %s\n", upload.filename.c_str());
                 int type = server.arg("type").toInt();
+                turnOffIndication();
                 if (!Update.begin(UPDATE_SIZE_UNKNOWN, type)) {
                     Update.printError(Serial);
                 }

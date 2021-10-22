@@ -6,6 +6,7 @@
 #include "RealTimeClock.h"
 
 #define gpsSerial Serial2
+static unsigned long lastTimeGPSSync = 0;
 TinyGPSPlus gps;
 
 void setupGPS() {
@@ -20,8 +21,6 @@ void syncGPSTimeWithRTC() {
 }
 
 bool getDataGps(byte &hour, byte &minute, byte &second, byte &day, byte &month, byte &year) {
-    static unsigned long lastTimeGPSSync = 0;
-
     while (gpsSerial.available() > 0){
         char c = gpsSerial.read();
         

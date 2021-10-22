@@ -2,8 +2,17 @@
 #include <WiFiClient.h>
 #include <WiFi.h>
 
+#include "Indication.h"
+#include "Brightness.h"
 #include "EEPROMHelper.h"
 #include "Constants.h"
+
+// ntp servers
+const char* ntpServer1 = "europe.pool.ntp.org";
+const char* ntpServer2 = "north-america.pool.ntp.org";
+const char* ntpServer3 = "pool.ntp.org";
+
+void tryConnectToWifi();
 
 bool StartAPMode() {
 	IPAddress apIP(192, 168, 4, 1);
@@ -17,8 +26,8 @@ bool StartAPMode() {
 
 void setupWifi() {
 	WiFi.mode(WIFI_STA);
-	byte tries = 11;
 
+	// doIndication("1234", true, true);
 	String ssid = readWifiSSID();
 	String password = readWifiPassword();
 	boolean hasPassword = (ssid != "" && password != "");
@@ -34,10 +43,10 @@ void setupWifi() {
 	Serial.print("Password - ");
 	Serial.println(password);
 
-	while (hasPassword && --tries && WiFi.status() != WL_CONNECTED) {
-		Serial.print(".");
-		delay(1000);
+	if (hasPassword) {
+		tryConnectToWifi();
 	}
+
 	if (WiFi.status() != WL_CONNECTED) {
 		// Если не удалось подключиться запускаем в режиме AP
 		Serial.println("");
@@ -54,6 +63,23 @@ void setupWifi() {
 		Serial.println("WiFi connected");
 		Serial.println("IP address: ");
 		Serial.println(WiFi.localIP());
-		// connect = 1;
+		configTime(0, 0, ntpServer1, ntpServer2, ntpServer3);
 	}
+}
+
+void tryConnectToWifi() {
+	long startTime = millis();
+	long millisElapse = 0;
+	 
+	while (WiFi.status() != WL_CONNECTED && millisElapse < 10000) {
+		millisElapse = millis() - startTime;
+		int number = (millisElapse / 100) % 10;
+		String stringToDisplay = "";
+		for (int i = 0; i < lampsCount; i++) {
+			stringToDisplay += String(number);
+		}
+		adjustBrightness();
+		doIndication(stringToDisplay, true, true);
+	}
+	turnOffIndication();
 }

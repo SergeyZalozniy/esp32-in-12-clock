@@ -40,6 +40,7 @@ void adjustBrightness() {
   int desireVolt = map(light, 500, 2400, minVoltage, maxVoltage);
   desireVolt = max(desireVolt, minVoltage);
   desireVolt = min(desireVolt, maxVoltage);
+  // desireVolt = maxVoltage;
 
   aimVoltage = desireVolt;
 }

@@ -2,6 +2,7 @@
 #include <Wire.h>
 
 #include "Constants.h"
+#include "TimeLib.h"
 #include "RealTimeClock.h"
 
 #define DS1307_ADDRESS 0x68
