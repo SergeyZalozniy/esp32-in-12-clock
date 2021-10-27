@@ -1,17 +1,24 @@
-#include <Adafruit_NeoPixel.h>
 #include <EEPROM.h>
 
 #include "TimeLib.h"
 
-#include "Constants.h"
-#include "RealTimeClock.h"
-#include "Brightness.h"
-#include "GPSTime.h"
-#include "Indication.h"
-#include "LocalTime.h"
-#include "WifiInit.h"
-#include "WebService.h"
-#include "NTPTime.h"
+#include "Helpers/Constants.h"
+
+#include "TimeCalculation/BuildTime.h"
+#include "TimeCalculation/RealTimeClock.h"
+#include "TimeCalculation/NTPTime.h"
+#include "TimeCalculation/GPSTime.h"
+#include "TimeCalculation/LocalTime.h"
+
+#include "LampIndication/Brightness.h"
+#include "LampIndication/Indication.h"
+
+#include "WebService/WifiInit.h"
+#include "WebService/WebService.h"
+
+#include "LedIndication/LedStrip.h"
+
+#define hasValidDateTime year() >= BUILD_YEAR
 
 enum ClockState { 
   timeState,
@@ -19,9 +26,9 @@ enum ClockState {
   date
 };
 
-Adafruit_NeoPixel strip = Adafruit_NeoPixel(stripLedCount, ledStripPin, NEO_RGB + NEO_KHZ800);
 String getStringToDisplay(bool &lowDot, bool &upDot);
 String getTransitionStep(String from, String to, byte iteration);
+uint32_t wheel(byte WheelPos);
 
 ClockState state = timeState;
 
@@ -29,35 +36,38 @@ void setup(){
   Serial.begin(115200);
   EEPROM.begin(512);
 
+  setupLedStrip();
   setupBrightness();
   setupRTC();
   setupGPS();
   setupIndication();
   setupWifi();
+  setupNTP();
   setupWebServer();
-
-  strip.begin();
-  strip.setBrightness(255);    // яркость, от 0 до 255
-  for (int i = 0; i < stripLedCount; i++ ) {   // от 0 до первой трети
-    strip.setPixelColor(i, 0xffffff);     // залить
-  }
-  strip.show();                         // отправить на ленту
-  delay(10);                          // очистить
-  Serial.println("Clock started");
 }
 
 void loop() {
   handleClient();
-  syncRTCWithInternalTime();
-  bool lowDot = false;
-  bool upDot = false;
-  String stringToDisplay = getStringToDisplay(lowDot, upDot);
+  
+  if (hasValidDateTime) {
+    bool lowDot = false, upDot = false;
+    String stringToDisplay = getStringToDisplay(lowDot, upDot);
+    doIndication(stringToDisplay, lowDot, upDot);
+    if (isLedStripActive()) {
+      turnOffLeds();
+    }
+  } else {
+    updateLedColor();
+    if (!isLedStripActive()) { 
+      turnOffIndication();
+    }
+  }
 
-  doIndication(stringToDisplay, lowDot, upDot);
-
-  adjustBrightness();
+  updateDesireVoltageWithLightSensor(); 
+  correctVoltage();
   syncGPSTimeWithRTC();
   syncNTPTimeWithRTC();
+  syncRTCWithInternalTime();
 }
 
 String getStringToDisplay(bool &lowDot, bool &upDot) {
@@ -79,8 +89,9 @@ String getStringToDisplay(bool &lowDot, bool &upDot) {
   case transition: {
     static byte iteration = 0;
     static unsigned long lastTimeTransitionIteration = 0;
-    lowDot = false;
-    upDot = true;
+    upDot = false;
+    lowDot = true;
+
     if (millis() - lastTimeTransitionIteration < 90)  {
       return currentStringToDisplay;
     }
@@ -114,8 +125,8 @@ String getStringToDisplay(bool &lowDot, bool &upDot) {
       lastTimeStateChanged = millis();
     }
     currentStringToDisplay = getCachedDateString();
-    lowDot = false;
-    upDot = true;
+    lowDot = true;
+    upDot = false;
     break;
   }
 

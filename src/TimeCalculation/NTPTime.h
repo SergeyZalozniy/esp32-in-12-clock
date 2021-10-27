@@ -1,0 +1,3 @@
+
+void setupNTP();
+void syncNTPTimeWithRTC();
