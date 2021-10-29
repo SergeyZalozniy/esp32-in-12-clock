@@ -1,21 +1,27 @@
 #include <Arduino.h>
 #include <WiFi.h>
+#include <HTTPClient.h>
+#include <Arduino_JSON.h>
 
-#include "TimeLib.h"
+#include "ezTime.h"
+
 #include "RealTimeClock.h"
+#include "LocalTime.h"
 
-// ntp servers
-const char* ntpServer1 = "europe.pool.ntp.org";
-const char* ntpServer2 = "north-america.pool.ntp.org";
-const char* ntpServer3 = "pool.ntp.org";
+unsigned long lastTimeNPTSync = 0;
 
-static unsigned long lastTimeNPTSync = 0;
+String getRequestLocation();
 
 void setupNTP() {
     if (WiFi.status() != WL_CONNECTED) {
         return ;
     }
-    configTime(0, 0, ntpServer1, ntpServer2, ntpServer3);
+    setInterval(60 * 60);
+
+    String timeZone = getRequestLocation();
+    if (!timeZone.isEmpty()) {
+        setTimeZone(timeZone);
+    }
 }
 
 void syncNTPTimeWithRTC() {
@@ -23,13 +29,37 @@ void syncNTPTimeWithRTC() {
         return ;
     }
     
-    if (millis() - lastTimeNPTSync < 60 * 60 * 1000 && lastTimeNPTSync > 0) {
+    events();
+
+    bool needUpdate = (millis() - lastTimeNPTSync > 60 * 60 * 1000 || lastTimeNPTSync == 0);
+    bool hasValidTime = (timeStatus() == timeSet);
+
+    if (!needUpdate || !hasValidTime) {
         return ;
     }
-    struct tm timeinfo;
-    if(getLocalTime(&timeinfo, 1000)) {
-        setRTCDateTime((byte)timeinfo.tm_hour, (byte)timeinfo.tm_min, (byte)timeinfo.tm_sec, (byte)timeinfo.tm_mday, (byte)(timeinfo.tm_mon + 1), (byte)(timeinfo.tm_year % 100), (byte)timeinfo.tm_wday);
-        syncRTCWithInternalTime();
-    }
+    setRTCDateTime((byte)UTC.hour(), (byte)UTC.minute(), (byte)UTC.second(), (byte)UTC.day(), (byte)UTC.month(), (byte)(UTC.year() % 100), (byte)UTC.weekday());
+    syncRTCWithInternalTime();
     lastTimeNPTSync = millis();
+}
+
+String getRequestLocation() {
+    HTTPClient http;
+    String result = "";
+    String serverPath = "http://ip-api.com/json/?fields=status,timezone";
+
+    http.begin(serverPath.c_str());
+
+    if (http.GET() > 0) {
+        String payload = http.getString();
+        JSONVar myObject = JSON.parse(payload);
+
+        if (JSON.typeof(myObject) == "undefined") {
+            Serial.println(F("Parsing input failed!"));
+        } else {
+            result = myObject["timezone"];
+        }
+    }
+    http.end();
+
+    return result;
 }

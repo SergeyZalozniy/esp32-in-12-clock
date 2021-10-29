@@ -1,6 +1,6 @@
 #include <EEPROM.h>
 
-#include "TimeLib.h"
+#include "ezTime.h"
 
 #include "Helpers/Constants.h"
 
@@ -14,6 +14,7 @@
 #include "LampIndication/Indication.h"
 
 #include "WebService/WifiInit.h"
+#include "WebService/WebSocket.h"
 #include "WebService/WebService.h"
 
 #include "LedIndication/LedStrip.h"
@@ -37,17 +38,20 @@ void setup(){
   EEPROM.begin(512);
 
   setupLedStrip();
+  setupIndication();
   setupBrightness();
+  setupWifi();
+  setupLocalTime();
   setupRTC();
   setupGPS();
-  setupIndication();
-  setupWifi();
   setupNTP();
   setupWebServer();
+  setupWebSocket();
 }
 
 void loop() {
   handleClient();
+  handleWebSocketClients();
   
   if (hasValidDateTime) {
     bool lowDot = false, upDot = false;

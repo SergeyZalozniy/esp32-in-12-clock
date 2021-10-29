@@ -1,22 +1,39 @@
 #include <Arduino.h>
-#include <Timezone.h>
+#include "ezTime.h"
+
+
+#include "../Helpers/EEPROMHelper.h"
+
+Timezone localTimeZone;
+
+String updatedTime = "";
+unsigned long lastTimeStringWasUpdated;
+
+String updatedDate = "";
+unsigned long lastDateStringWasUpdated;
 
 time_t getLocalTime();
 String preZero(int digit);
 
+void setupLocalTime() {
+    if (localTimeZone.setCache(timeZoneCacheAddress())) {
+        Serial.println(F("Has timezone cache"));
+    }
+}
+
+void setTimeZone(String tz) {
+  localTimeZone.setLocation(tz);
+}
+
 String getTime() {
-    time_t adjustedTime = getLocalTime();
-    return preZero(hour(adjustedTime)) + preZero(minute(adjustedTime));
+    return preZero(localTimeZone.hour()) + preZero(localTimeZone.minute());
 }
 
 String getDate() {
-    time_t adjustedTime = getLocalTime();
-    return preZero(day(adjustedTime)) + preZero(month(adjustedTime));
+    return preZero(localTimeZone.day()) + preZero(localTimeZone.month());
 }
 
 String getCachedTimeString() {
-  static String updatedTime = "";
-  static unsigned long lastTimeStringWasUpdated;
   if (millis() - lastTimeStringWasUpdated > 1000 || lastTimeStringWasUpdated == 0) {
     updatedTime = getTime();
     lastTimeStringWasUpdated = millis();
@@ -25,8 +42,6 @@ String getCachedTimeString() {
 }
 
 String getCachedDateString() {
-  static String updatedDate = "";
-  static unsigned long lastDateStringWasUpdated;
   if (millis() - lastDateStringWasUpdated > 5000 || lastDateStringWasUpdated == 0) {
     updatedDate = getDate();
     lastDateStringWasUpdated = millis();
@@ -38,15 +53,10 @@ time_t getLocalTime() {
     static int lastCorrectedHour = -1;
     static time_t deltaTime = 0;
 
-    TimeChangeRule uaSummer = {"EDT", Last, Sun, Mar, 2, 180};  // UTC + 3 hours
-    TimeChangeRule uaWinter = {"EST", Last, Sun, Oct, 3, 120};  // UTC + 2 hours
-    Timezone localTimezone(uaSummer, uaWinter);
-
     time_t utc = now();
 
     if (lastCorrectedHour != hour()) {
-        time_t localTime = localTimezone.toLocal(utc);
-        deltaTime = localTime - utc;
+        deltaTime = localTimeZone.getOffset();
         lastCorrectedHour = hour();
     }
 

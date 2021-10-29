@@ -1,0 +1,2 @@
+void setupWebSocket();
+void handleWebSocketClients();

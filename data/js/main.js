@@ -62,7 +62,7 @@ $("#scale").ionRangeSlider({
 });				
 
 var websock;
-	websock = new WebSocket('ws://firelamp.local:81/');
+	websock = new WebSocket('ws://nixie.local:81/');
 	websock.onopen = function(evt) { console.log('websock open'); };
 	websock.onclose = function(evt) { console.log('websock close'); };
 	websock.onerror = function(evt) { console.log(evt); };
@@ -95,7 +95,11 @@ websock.onmessage = function(evt) {
 		} else {
 			document.getElementById('h5_timer').innerHTML = text + "меньше 1 минуты";
 		}
- 	} else {
+ 	} else if (true) {
+		$('#timezone').value = evt.data.timezone;
+		$('#timezone-panel-title').innerHTML = evt.data;
+		$('#timezone-selected-title span').innerHTML = evt.data;
+	} else {
 		 console.log('unknown event - ' + evt.data);
 	}
 };
@@ -113,4 +117,31 @@ $('#timer').change(function () {
 });
 
 });
+
+
+var timezoneSelect = $('#timezone');
+var prevSelectedValue;
+
+timezoneSelect.change(function(e) {
+	var elements = document.getElementById("timezone").options;
+	if (typeof(prevSelectedValue) != 'undefined') {
+		for(var i = 0; i < elements.length; i++){
+		if(elements[i].selected && elements[i].value == prevSelectedValue) 
+			elements[i].selected = false;
+		}
+	}
+
+	prevSelectedValue = timezoneSelect.find("option:selected").val();
+	$('#timezone-selected-title span').text(prevSelectedValue);
+});
+
+$('#timezone-checkbox').on('change', function() {
+	$('#timezone-panel').collapse('toggle');
+});
+
+$('.filter-timezones').change(function() {
+	
+}); ;
+
+$(document)
 

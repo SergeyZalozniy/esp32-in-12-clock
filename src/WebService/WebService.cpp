@@ -5,7 +5,6 @@
 #include <Update.h>
 #include <WebServer.h>
 
-#include "TimeLib.h"
 #include "LampIndication/Indication.h"
 #include "Helpers/EEPROMHelper.h"
 
@@ -20,29 +19,15 @@ void setupWebServer() {
     SPIFFS.begin();
 
     if (MDNS.begin("nixie")) {
-        Serial.println("MDNS responder started");
+        Serial.println(F("MDNS responder started"));
         if (MDNS.addService("_http", "_tcp", 80)) {
-            // MDNS.addServiceTxt("_http", "_tcp", "board", "ESP32");
-            Serial.println("Add _http port 80");
+            Serial.println(F("Add _http port 80"));
         }
         if (MDNS.addService("_ws", "_tcp", 81)) {
-            // MDNS.addServiceTxt("_ws", "_tcp", "board", "ESP32");
-            Serial.println("Add _ws port 81");
+            Serial.println(F("Add _ws port 81"));
         }
-    
-        // if (MDNS.addService("http", "tcp", 80)) {
-        //     MDNS.addServiceTxt("http", "tcp", "board", "ESP32");
-        //     Serial.println("Add http port 80");
-        // }
-        // if (MDNS.addService("ws", "tcp", 81)) {
-        //     MDNS.addServiceTxt("ws", "tcp", "board", "ESP32");
-        //     Serial.println("Add ws port 81");
-        // }
-        // MDNS.addService("http", "tcp", 80);
-        // MDNS.addServiceTxt("_http", "_tcp", "board", "esp32");
-        // MDNS.addService("ws", "tcp", 81);
     } else {
-        Serial.println("MDNS.begin failed");
+        Serial.println(F("MDNS.begin failed"));
     }
 
     HTTP_init();
@@ -133,8 +118,6 @@ void handleFileUpload() {
         String filename = upload.filename;
         if (!filename.startsWith("/"))
             filename = "/" + filename;
-        Serial.print("handleFileUpload Name: ");
-        Serial.println(filename);
         fsUploadFile = SPIFFS.open(filename, "w");
         filename = String();
     } else if (upload.status == UPLOAD_FILE_WRITE) {
@@ -143,8 +126,6 @@ void handleFileUpload() {
     } else if (upload.status == UPLOAD_FILE_END) {
         if (fsUploadFile)
             fsUploadFile.close();
-        Serial.print("handleFileUpload Size: ");
-        Serial.println(upload.totalSize);
     }
 }
 
@@ -152,7 +133,6 @@ void handleFileDelete() {
     if (server.args() == 0)
         return server.send(500, "text/plain", "BAD ARGS");
     String path = server.arg(0);
-    Serial.println("handleFileDelete: " + path);
     if (path == "/")
         return server.send(500, "text/plain", "BAD PATH");
     if (!SPIFFS.exists(path))
@@ -166,7 +146,6 @@ void handleFileCreate() {
     if (server.args() == 0)
         return server.send(500, "text/plain", "BAD ARGS");
     String path = server.arg(0);
-    Serial.println("handleFileCreate: " + path);
     if (path == "/")
         return server.send(500, "text/plain", "BAD PATH");
     if (SPIFFS.exists(path))
@@ -187,7 +166,6 @@ void handleFileList() {
     }
 
     String path = server.arg("dir");
-    Serial.println("handleFileList: " + path);
     File dir = SPIFFS.open(path);
     path = String();
 
@@ -229,13 +207,13 @@ void handleNotFound() {
 void HTTP_init() {
     server.on("/config.json", HTTP_GET, []()
               { 
-                struct tm timeinfo;
-                if (getLocalTime(&timeinfo, 1000)) {
-                    String res = String(timeinfo.tm_hour) + ":" + String(timeinfo.tm_min) + ":" + String(timeinfo.tm_sec) + " - " + String(timeinfo.tm_mday) + " \\ " + String(timeinfo.tm_mon) + " \\ " + String(timeinfo.tm_year) + " || " + String(timeinfo.tm_wday);
-                    server.send(200, "text/plain", res);
-                } else {
+                // struct tm timeinfo;
+                // if (getLocalTime(&timeinfo, 1000)) {
+                //     String res = String(timeinfo.tm_hour) + ":" + String(timeinfo.tm_min) + ":" + String(timeinfo.tm_sec) + " - " + String(timeinfo.tm_mday) + " \\ " + String(timeinfo.tm_mon) + " \\ " + String(timeinfo.tm_year) + " || " + String(timeinfo.tm_wday);
+                //     server.send(200, "text/plain", res);
+                // } else {
                     server.send(200, "text/plain", "Fail");
-                }
+                // }
                });
 
     server.on("/", HTTP_GET, []()
@@ -287,7 +265,6 @@ void HTTP_init() {
         []() {
             HTTPUpload &upload = server.upload();
             if (upload.status == UPLOAD_FILE_START) {
-                Serial.printf("Update: %s\n", upload.filename.c_str());
                 int type = server.arg("type").toInt();
                 turnOffIndication();
                 if (!Update.begin(UPDATE_SIZE_UNKNOWN, type)) {
@@ -299,7 +276,6 @@ void HTTP_init() {
                 }
             } else if (upload.status == UPLOAD_FILE_END) {
                 if (Update.end(true)) {
-                    Serial.printf("Update Success: %u\nRebooting...\n", upload.totalSize);
                 } else {
                     Update.printError(Serial);
                 }
@@ -317,6 +293,7 @@ void HTTP_init() {
     server.serveStatic("/font", SPIFFS, "/font", "max-age=86400");
     server.serveStatic("/js", SPIFFS, "/js", "max-age=86400");
     server.serveStatic("/css", SPIFFS, "/css", "max-age=86400");
+    server.serveStatic("/favicon.ico", SPIFFS, "/favicon.ico", "max-age=86400");
 
     server.on("/all", HTTP_GET, []() {
                   String json = "{";
@@ -328,5 +305,5 @@ void HTTP_init() {
                   json = String();
               });
     server.begin();
-    Serial.println("HTTP server started");
+    Serial.println(F("HTTP server started"));
 }

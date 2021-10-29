@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 
-#include "TimeLib.h"
+#include "ezTime.h"
 
 #include "../Helpers/Constants.h"
 #include "RealTimeClock.h"
@@ -25,7 +25,6 @@ void syncRTCWithInternalTime() {
   byte hours, minutes, seconds, day, month, year, dayOfWeek;
   getRTCTime(seconds, minutes, hours, dayOfWeek, day, month, year);    
   setTime((int)hours, (int)minutes, (int)seconds, (int)day, (int)month, (int)year);
-
   lastTimeRTCSync = millis();
 }
 

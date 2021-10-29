@@ -32,10 +32,10 @@ void setupWifi() {
 		WiFi.begin(ssid.c_str(), password.c_str());
 	}
 
-	Serial.println("Wifi:");
-	Serial.print("Network - ");
+	Serial.println(F("Wifi:"));
+	Serial.print(F("Network - "));
 	Serial.println(ssid);
-	Serial.print("Password - ");
+	Serial.print(F("Password - "));
 	Serial.println(password);
 
 	if (hasPassword) {
@@ -43,20 +43,14 @@ void setupWifi() {
 	}
 
 	if (WiFi.status() != WL_CONNECTED) {
-		// Если не удалось подключиться запускаем в режиме AP
-		Serial.println("");
-		Serial.println("WiFi up AP");
+		Serial.println(F("WiFi up AP"));
 		StartAPMode();
-		// connect = 0;
 		IPAddress myIP = WiFi.softAPIP();
-		Serial.print("AP IP address: ");
+		Serial.print(F("AP IP address: "));
 		Serial.println(myIP);
 	} else {
-		// Иначе удалось подключиться отправляем сообщение
-		// о подключении и выводим адрес IP
-		Serial.println("");
-		Serial.println("WiFi connected");
-		Serial.println("IP address: ");
+		Serial.println(F("WiFi connected"));
+		Serial.println(F("IP address: "));
 		Serial.println(WiFi.localIP());
 	}
 }

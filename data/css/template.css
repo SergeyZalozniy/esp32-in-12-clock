@@ -18,3 +18,27 @@ body {
     color:white;
     text-shadow: -2px 0 black, 0 2px black, 2px 0 black, 0 -2px black;
 }
+
+
+#timezone {
+  height: 265px;
+}
+
+.timezone-group-panel .input-group-addon {
+  border-right: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+#timezone-panel-title {
+  background: none;
+  border: none;
+  box-shadow: none;
+}
+
+.filter-timezones-select {
+  margin-top: 8px;
+}
+
+#timezone-selected-title {
+  padding-top: 14px;
+}
