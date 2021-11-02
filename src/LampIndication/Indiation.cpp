@@ -25,15 +25,15 @@ byte anodesGroup = 0;
     #endif
  }
  
- 
  void doIndication(String valueToDisplay, bool lowDot, bool upDot) {
+  if ((micros() - lastTimeInterval1Started) < 2500)
+    return ;
+
   #ifdef VERSION_2
   digitalWrite(toch2, upDot);
   #endif
 
   digitalWrite(toch, lowDot);
-  if ((micros() - lastTimeInterval1Started) < 2500)
-    return ;
 
   int anode = anodesSequence[anodesGroup];
   digitalWrite(anode, LOW);

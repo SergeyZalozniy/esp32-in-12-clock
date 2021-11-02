@@ -4,16 +4,22 @@
 #include "ezTime.h"
 
 #include "../Helpers/Constants.h"
+#include "BuildTime.h"
 #include "RealTimeClock.h"
 
 #define DS1307_ADDRESS 0x68
 #define zero 0x00
 
+bool dateTimeIsValid = false;
 byte decToBcd(byte val);
 byte bcdToDec(byte val);
 
 void setupRTC() {
   Wire.begin(i2csDataPin, i2csClockPin);
+}
+
+boolean hasValidDateAndTime() {
+  return dateTimeIsValid;
 }
 
 void syncRTCWithInternalTime() {
@@ -25,6 +31,7 @@ void syncRTCWithInternalTime() {
   byte hours, minutes, seconds, day, month, year, dayOfWeek;
   getRTCTime(seconds, minutes, hours, dayOfWeek, day, month, year);    
   setTime((int)hours, (int)minutes, (int)seconds, (int)day, (int)month, (int)year);
+  dateTimeIsValid = defaultTZ->year() >= BUILD_YEAR;
   lastTimeRTCSync = millis();
 }
 

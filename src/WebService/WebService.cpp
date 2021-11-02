@@ -16,6 +16,8 @@ WebServer server(80);
 void HTTP_init();
 
 void setupWebServer() {
+    server.enableDelay(false);
+
     SPIFFS.begin();
 
     if (MDNS.begin("nixie")) {

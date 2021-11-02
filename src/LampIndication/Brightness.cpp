@@ -34,7 +34,7 @@ void forceCorrectVoltage() {
 }
 
 void correctVoltage() {
-  if (millis() - lastTimeUpdateVoltage < 1003) {
+  if (millis() - lastTimeUpdateVoltage < 50) {
     return ;
   }
 

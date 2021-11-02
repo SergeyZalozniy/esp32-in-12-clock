@@ -1,107 +1,82 @@
-function start() {
-$.getJSON( "config.json", function( data ) {
-	var jsonssid = data.ssid; 
-	var jsonpassword = data.password; 
-
-	if (jsonssid === undefined || jsonssid === null) {
-	}else{
-		document.getElementById('ssid').value=jsonssid;
-	}
-	
-	if (jsonpassword === undefined || jsonpassword === null) {
-	}else{
-		document.getElementById('ssidPass').value=jsonpassword;
-	}
-});
-}
-
 $(function() {
 
+$("#savewifi").click(function () {
+	$.ajax("/ssid?ssid=" + $("input[name='ssid']").val() + "&password=" + $("input[name='ssidPass']").val());
+});
+
 $("#switch").click(function(){
-	console.log("link click");
 	$.ajax( "/switchstate");
 });
 
-$("#volume").ionRangeSlider({
-	type: "single",
-	min: 1,
-	max: 255,
-	from: 1,
-	keyboard: true,
+// $("#volume").ionRangeSlider({
+// 	type: "single",
+// 	min: 1,
+// 	max: 255,
+// 	from: 1,
+// 	keyboard: true,
 
-	onFinish: function (data) {
-		$.ajax( "/volume?volume=" + data.from );
-		websock.send('volume' + data.from);
-	}
-});	
+// 	onFinish: function (data) {
+// 		$.ajax( "/volume?volume=" + data.from );
+// 		websock.send('volume' + data.from);
+// 	}
+// });				
 
-$("#speeed").ionRangeSlider({
-	type: "single",
-	min: 1,
-	max: 255,
-	from: 1,
-	keyboard: true,
-
-	onFinish: function (data) {
-		$.ajax( "/speed?speed=" + data.from );
-		websock.send('speed' + data.from);
-	}
-});
-
-$("#scale").ionRangeSlider({
-	type: "single",
-	min: 1,
-	max: 100,
-	from: 1,
-	keyboard: true,
-
-	onFinish: function (data) {
-		$.ajax( "/scale?scale=" + data.from );
-		websock.send('scale' + data.from);
-	}
-});				
-
-var websock;
-	websock = new WebSocket('ws://nixie.local:81/');
-	websock.onopen = function(evt) { console.log('websock open'); };
-	websock.onclose = function(evt) { console.log('websock close'); };
-	websock.onerror = function(evt) { console.log(evt); };
+var websock = new WebSocket('ws://nixie.local:81/');
+websock.onopen = function(evt) { console.log('websock open'); };
+websock.onclose = function(evt) { console.log('websock close'); };
+websock.onerror = function(evt) { console.log(evt); };
 
 	
 websock.onmessage = function(evt) {
-	console.log(evt);
+	var command = evt.data.substring(0, 1).charCodeAt(0);
+	var value = evt.data.substring(1);
 
-	if (evt.data.substring(0, 6) == 'effect') {
-		$("#effect").val(evt.data.substring(6));
-	} else if (evt.data.substring(0, 6) == 'volume') {
-		$("#volume").data("ionRangeSlider").update({
-		   from: evt.data.substring(6)
-		 });
- 	} else if (evt.data.substring(0, 5) == 'speed') {
-		$("#speeed").data("ionRangeSlider").update({
-		   from: evt.data.substring(5)
-		 });
- 	} else if (evt.data.substring(0, 5) == 'scale') {
-		$("#scale").data("ionRangeSlider").update({
-		   from: evt.data.substring(5)
-		 });
-	} else if (evt.data.substring(0, 5) == 'timer') {
-		var totalSeconds = parseInt(evt.data.substring(5));
-		var hours = Math.trunc(totalSeconds / 60 / 60);
-		var minutes = Math.trunc((totalSeconds / 60) % 60);
-		var text = 'До выключения - ';
-		if (hours > 0 || minutes > 0) {
-			document.getElementById('h5_timer').innerHTML = text + hours + " час. " + minutes + " мин.";
-		} else {
-			document.getElementById('h5_timer').innerHTML = text + "меньше 1 минуты";
-		}
- 	} else if (true) {
-		$('#timezone').value = evt.data.timezone;
-		$('#timezone-panel-title').innerHTML = evt.data;
-		$('#timezone-selected-title span').innerHTML = evt.data;
-	} else {
-		 console.log('unknown event - ' + evt.data);
+	console.log("Event " +  command + " " + value);
+
+	switch (command) {
+		case 1:
+			if (document.getElementById('ssidPass') != null) {
+				document.getElementById('ssidPass').value = value;
+			}
+		case 2:
+			if (document.getElementById('ssid') != null) {
+				document.getElementById('ssid').value = value;
+			}
+		default:
+			break;
 	}
+	// console.log('unknown event - ' + evt.data);
+	// if (evt.data.substring(0, 6) == 'effect') {
+	// 	$("#effect").val(evt.data.substring(6));
+	// } else if (evt.data.substring(0, 6) == 'volume') {
+	// 	$("#volume").data("ionRangeSlider").update({
+	// 	   from: evt.data.substring(6)
+	// 	 });
+ 	// } else if (evt.data.substring(0, 5) == 'speed') {
+	// 	$("#speeed").data("ionRangeSlider").update({
+	// 	   from: evt.data.substring(5)
+	// 	 });
+ 	// } else if (evt.data.substring(0, 5) == 'scale') {
+	// 	$("#scale").data("ionRangeSlider").update({
+	// 	   from: evt.data.substring(5)
+	// 	 });
+	// } else if (evt.data.substring(0, 5) == 'timer') {
+	// 	var totalSeconds = parseInt(evt.data.substring(5));
+	// 	var hours = Math.trunc(totalSeconds / 60 / 60);
+	// 	var minutes = Math.trunc((totalSeconds / 60) % 60);
+	// 	var text = 'До выключения - ';
+	// 	if (hours > 0 || minutes > 0) {
+	// 		document.getElementById('h5_timer').innerHTML = text + hours + " час. " + minutes + " мин.";
+	// 	} else {
+	// 		document.getElementById('h5_timer').innerHTML = text + "меньше 1 минуты";
+	// 	}
+ 	// } else if (true) {
+	// 	$('#timezone').value = evt.data.timezone;
+	// 	$('#timezone-panel-title').innerHTML = evt.data;
+	// 	$('#timezone-selected-title span').innerHTML = evt.data;
+	// } else {
+		 
+	// }
 };
 
 $('#effect').change(function () {
@@ -116,11 +91,9 @@ $('#timer').change(function () {
 	websock.send('timer' + selectedval);
 });
 
-});
-
-
 var timezoneSelect = $('#timezone');
 var prevSelectedValue;
+var timezoneDataCache = [];
 
 timezoneSelect.change(function(e) {
 	var elements = document.getElementById("timezone").options;
@@ -137,11 +110,34 @@ timezoneSelect.change(function(e) {
 
 $('#timezone-checkbox').on('change', function() {
 	$('#timezone-panel').collapse('toggle');
+
+	var autoTimeZone = $('#timezone-checkbox').is(":checked")
+	var command = String.fromCharCode(3)
+	websock.send(command + autoTimeZone);
 });
 
-$('.filter-timezones').change(function() {
-	
-}); ;
+$('#filter-timezones-input').on('input', function(e) {
+	timezoneSelect[0].options.length = 0;
+	var value = e.target.value.toLowerCase();
+	if (value === '') {
+		return restoreTimeZoneData();
+	}
+	timezoneDataCache.forEach(option => {
+		if (option.text.toLowerCase().indexOf(value) !== -1) {
+			timezoneSelect[0].appendChild(option);
+		}
+	})
+});
 
-$(document)
+function restoreTimeZoneData(){
+	timezoneDataCache.forEach(option => timezoneSelect[0].appendChild(option));
+}
 
+window.onload = function() {
+	// Load cache
+	for (var i=0, iLen=timezoneSelect[0].options.length; i<iLen; i++) {
+		timezoneDataCache.push(timezoneSelect[0].options[i]);
+	}
+}
+
+});

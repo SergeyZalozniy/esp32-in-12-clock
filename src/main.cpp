@@ -19,8 +19,6 @@
 
 #include "LedIndication/LedStrip.h"
 
-#define hasValidDateTime year() >= BUILD_YEAR
-
 enum ClockState { 
   timeState,
   transition,
@@ -29,8 +27,6 @@ enum ClockState {
 
 String getStringToDisplay(bool &lowDot, bool &upDot);
 String getTransitionStep(String from, String to, byte iteration);
-uint32_t wheel(byte WheelPos);
-
 ClockState state = timeState;
 
 void setup(){
@@ -51,8 +47,18 @@ void setup(){
 void loop() {
   handleClient();
   handleWebSocketClients();
+
+  updateDesireVoltageWithLightSensor(); 
+
+  if (state == transition) {
+    correctVoltage();
+  }
+
+  syncRTCWithInternalTime();
+  syncGPSTimeWithRTC();
+  syncNTPTimeWithRTC();
   
-  if (hasValidDateTime) {
+  if (hasValidDateAndTime()) {
     bool lowDot = false, upDot = false;
     String stringToDisplay = getStringToDisplay(lowDot, upDot);
     doIndication(stringToDisplay, lowDot, upDot);
@@ -65,12 +71,6 @@ void loop() {
       turnOffIndication();
     }
   }
-
-  updateDesireVoltageWithLightSensor(); 
-  correctVoltage();
-  syncGPSTimeWithRTC();
-  syncNTPTimeWithRTC();
-  syncRTCWithInternalTime();
 }
 
 String getStringToDisplay(bool &lowDot, bool &upDot) {

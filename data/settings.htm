@@ -12,7 +12,7 @@
 	<link rel="stylesheet" href="css/bootstrap.min.css">
 	<link rel="stylesheet" href="css/template.css">
 
-<body onload="start()">
+<body>
 	<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
 		<div class="container">
 			<div class="navbar-header">
@@ -42,7 +42,7 @@
 					<div class="input-group">
 						<span class="input-group-addon">SSID</span>
 						<input id="ssid" type="text" class="form-control input-lg" name="ssid"
-							placeholder="Wi-Fi Network name" value="">
+							placeholder="Wi-Fi name" value="">
 					</div>
 					<br>
 					<div class="input-group">
@@ -61,16 +61,5 @@
 	<script src="js/bootstrap.min.js"></script>
 	<script src="js/highlight.js"></script>
 	<script src="js/main.js"></script>
-
-	<script>
-
-		$("#savewifi").click(function () {
-			$.ajax("/ssid?ssid=" + $("input[name='ssid']").val() + "&password=" + $("input[name='ssidPass']").val());
-		});
-
-	</script>
-
-
 </body>
-
 </html>
