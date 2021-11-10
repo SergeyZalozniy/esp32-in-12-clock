@@ -9,6 +9,7 @@
 #include "Helpers/Constants.h"
 
 void tryConnectToWifi();
+void setupVoltage();
 
 bool StartAPMode() {
 	IPAddress apIP(192, 168, 4, 1);
@@ -40,6 +41,8 @@ void setupWifi() {
 
 	if (hasPassword) {
 		tryConnectToWifi();
+	} else {
+		setupVoltage();
 	}
 
 	if (WiFi.status() != WL_CONNECTED) {
@@ -60,6 +63,24 @@ void tryConnectToWifi() {
 	long millisElapse = 0;
 	setAimVoltage(minVoltage + (maxVoltage - minVoltage) * 0.85);
 	while (WiFi.status() != WL_CONNECTED && millisElapse < 10000) {
+		millisElapse = millis() - startTime;
+		int number = (millisElapse / 100) % 10;
+		String stringToDisplay = "";
+		for (int i = 0; i < lampsCount; i++) {
+			stringToDisplay += String(number);
+		}
+		forceCorrectVoltage();
+		doIndication(stringToDisplay, true, true);
+	}
+	setAimVoltage((maxVoltage + minVoltage) / 2);
+	turnOffIndication();
+}
+
+void setupVoltage() {
+	long startTime = millis();
+	long millisElapse = 0;
+	setAimVoltage(minVoltage + (maxVoltage - minVoltage) * 0.85);
+	while (millisElapse < 10000) {
 		millisElapse = millis() - startTime;
 		int number = (millisElapse / 100) % 10;
 		String stringToDisplay = "";

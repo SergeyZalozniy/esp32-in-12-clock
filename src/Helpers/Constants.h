@@ -34,7 +34,7 @@ const int webSocketPort = 81;
     const int toch = 14; //Точки между сигментами
     const bool hasLightSensor = true; 
 
-    const int minVoltage = 1750;
+    const int minVoltage = 1700;
     const int maxVoltage = 2050;
 #endif
 

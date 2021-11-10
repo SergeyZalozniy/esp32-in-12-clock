@@ -267,6 +267,8 @@ void HTTP_init() {
         []() {
             HTTPUpload &upload = server.upload();
             if (upload.status == UPLOAD_FILE_START) {
+                Serial.println(upload.filename);
+                Serial.println(upload.name);
                 int type = server.arg("type").toInt();
                 turnOffIndication();
                 if (!Update.begin(UPDATE_SIZE_UNKNOWN, type)) {
