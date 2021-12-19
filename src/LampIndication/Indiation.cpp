@@ -28,7 +28,7 @@ byte anodesGroup = 0;
  }
  
  void doIndication(String valueToDisplay, bool lowDot, bool upDot) {
-  if ((micros() - lastTimeInterval1Started) < 2500)
+  if ((micros() - lastTimeInterval1Started) < 2673)
     return ;
 
   #ifdef VERSION_2
@@ -237,7 +237,7 @@ void setNumber(int digit) {
       digitalWrite (decoder4Pin, HIGH);
       break;
     case 2:
-      digitalWrite (decoder1Pin, HIGH );
+      digitalWrite (decoder1Pin, HIGH);
       digitalWrite (decoder2Pin, HIGH);
       digitalWrite (decoder3Pin, HIGH);
       digitalWrite (decoder4Pin, LOW);
