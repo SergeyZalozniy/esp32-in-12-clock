@@ -16,13 +16,17 @@ time_t getLocalTime();
 String preZero(int digit);
 
 void setupLocalTime() {
-    if (localTimeZone.setCache(timeZoneCacheAddress())) {
+    if (localTimeZone.setCache("timezone", "cache")) {
         Serial.println(F("Has timezone cache"));
     }
 }
 
-void setTimeZone(String tz) {
-  localTimeZone.setLocation(tz);
+boolean setTimeZone(String tz) {
+  return localTimeZone.setLocation(tz);
+}
+
+String getTimezoneName() {
+  return localTimeZone.getTimezoneName();
 }
 
 String getTime() {

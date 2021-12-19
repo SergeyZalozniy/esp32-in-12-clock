@@ -17,9 +17,7 @@ void HTTP_init();
 
 void setupWebServer() {
     server.enableDelay(false);
-
     SPIFFS.begin();
-
     if (MDNS.begin("nixie")) {
         Serial.println(F("MDNS responder started"));
         if (MDNS.addService("_http", "_tcp", 80)) {
@@ -209,18 +207,20 @@ void handleNotFound() {
 void HTTP_init() {
     server.on("/config.json", HTTP_GET, []()
               { 
+                  if (!handleFileRead("/config.json"))
+                      server.send(404, "text/plain", "FileNotFound");
                 // struct tm timeinfo;
                 // if (getLocalTime(&timeinfo, 1000)) {
                 //     String res = String(timeinfo.tm_hour) + ":" + String(timeinfo.tm_min) + ":" + String(timeinfo.tm_sec) + " - " + String(timeinfo.tm_mday) + " \\ " + String(timeinfo.tm_mon) + " \\ " + String(timeinfo.tm_year) + " || " + String(timeinfo.tm_wday);
                 //     server.send(200, "text/plain", res);
                 // } else {
-                    server.send(200, "text/plain", "Fail");
+                    // server.send(200, "text/plain", "Fail");
                 // }
                });
 
     server.on("/", HTTP_GET, []()
               {
-                  if (!handleFileRead("/index.htm"))
+                  if (!handleFileRead("/settings.htm"))
                       server.send(404, "text/plain", "FileNotFound");
               }); //list directory
 
@@ -255,6 +255,7 @@ void HTTP_init() {
                   saveWifiPassword(server.arg("password"));
                   saveWifiSSID(server.arg("ssid"));
                   server.send(200, "text/plain", "OK");
+                  delay(200);
                   ESP.restart();  
               });
 
@@ -267,7 +268,13 @@ void HTTP_init() {
         []() {
             HTTPUpload &upload = server.upload();
             if (upload.status == UPLOAD_FILE_START) {
-                int type = server.arg("type").toInt();
+                String filename = upload.filename;
+                int type = -1;
+                if (filename.equalsIgnoreCase("firmware.bin")) {
+                    type = U_FLASH;
+                } else if (filename.equalsIgnoreCase("spiffs.bin")) {
+                    type = U_SPIFFS;
+                }
                 turnOffIndication();
                 if (!Update.begin(UPDATE_SIZE_UNKNOWN, type)) {
                     Update.printError(Serial);

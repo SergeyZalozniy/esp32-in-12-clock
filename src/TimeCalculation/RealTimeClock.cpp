@@ -29,7 +29,8 @@ void syncRTCWithInternalTime() {
   }
 
   byte hours, minutes, seconds, day, month, year, dayOfWeek;
-  getRTCTime(seconds, minutes, hours, dayOfWeek, day, month, year);    
+  getRTCTime(seconds, minutes, hours, dayOfWeek, day, month, year);
+
   setTime((int)hours, (int)minutes, (int)seconds, (int)day, (int)month, (int)year);
   dateTimeIsValid = defaultTZ->year() >= BUILD_YEAR;
   lastTimeRTCSync = millis();

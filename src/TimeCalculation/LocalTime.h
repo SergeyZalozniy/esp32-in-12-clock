@@ -1,7 +1,8 @@
 #include <Arduino.h>
 
 void setupLocalTime();
-void setTimeZone(String tz);
+boolean setTimeZone(String tz);
+String getTimezoneName();
 String getTime();
 String getDate();
 String getCachedTimeString();

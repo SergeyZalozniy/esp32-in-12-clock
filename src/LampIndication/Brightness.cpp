@@ -2,7 +2,7 @@
 
 #include "../Helpers/Constants.h"
 
-int dutyCycle = 100;
+int dutyCycle = 192;
 int aimVoltage = (maxVoltage + minVoltage) / 2;
 unsigned long lastTimeCheckLightSensor = 0;
 unsigned long lastTimeUpdateVoltage = 0;

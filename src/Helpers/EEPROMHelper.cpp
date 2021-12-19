@@ -1,44 +1,42 @@
 #include <Arduino.h>
-#include <EEPROM.h>
+#include <Preferences.h>
+#include <SPIFFS.h>
+#include <ArduinoJson.h>
 
-const int16_t timeZoneAddress = 50; // needs 50 bytes
-const int ssidAddress = 100;
-const int passwordAddress = 130;
+#define passwordKey "password"
+#define ssidKey "ssid"
+#define autotimezoneKey "autotimezone"
 
+Preferences prefs;
 
-String read(int address);
-void write(String value, int address);
+void setupEEPROM() {
+    prefs.begin("credentials", false);
+}
 
 int16_t timeZoneCacheAddress() {
-    return timeZoneAddress;
+    return 0;
 }
 
 String readWifiSSID() {
-    return read(ssidAddress);
+    return prefs.getString(ssidKey);
 }
 
 void saveWifiSSID(String value) {
-    write(value, ssidAddress);
+    prefs.putString(ssidKey, value);
 }
 
 String readWifiPassword() {
-    return read(passwordAddress);
+    return prefs.getString(passwordKey);
 }
 
 void saveWifiPassword(String value) {
-    write(value, passwordAddress);
+    prefs.putString(passwordKey, value);
 }
 
-String read(int address) {
-    EEPROM.begin(512);
-    String value = EEPROM.readString(address);
-    EEPROM.end();
-    return value;
+boolean readAutoTimezone() {
+    return prefs.getBool(autotimezoneKey, true);
 }
 
-void write(String value, int address) {
-    EEPROM.begin(512);
-    EEPROM.writeString(address, value);
-    EEPROM.commit();
-    EEPROM.end();
+void saveAutoTimezone(boolean value) {
+    prefs.putBool(autotimezoneKey, value);
 }

@@ -5,41 +5,62 @@
 
 #include "ezTime.h"
 
+#include "../Helpers/EEPROMHelper.h"
 #include "RealTimeClock.h"
 #include "LocalTime.h"
 
 unsigned long lastTimeNPTSync = 0;
 
 String getRequestLocation();
+boolean detectTimezone();
 
 void setupNTP() {
     if (WiFi.status() != WL_CONNECTED) {
         return ;
     }
     setInterval(60 * 60);
-
-    String timeZone = getRequestLocation();
-    if (!timeZone.isEmpty()) {
-        setTimeZone(timeZone);
+    if (!readAutoTimezone()) {
+        return ;
     }
+    detectTimezone();
 }
 
 void syncNTPTimeWithRTC() {
     if (WiFi.status() != WL_CONNECTED) {
         return ;
     }
-    
+
+    #if NTP_RETRY <= 3000
+    #error("Bad Idea, set NTP_RETRY to 60 minues") 
+    #endif
+
     events();
 
-    bool needUpdate = (millis() - lastTimeNPTSync > 60 * 60 * 1000 || lastTimeNPTSync == 0);
-    bool hasValidTime = (timeStatus() == timeSet);
+    bool needUpdate = (millis() - lastTimeNPTSync > 20 * 60 * 1000 || lastTimeNPTSync == 0);
 
-    if (!needUpdate || !hasValidTime) {
+    if (!needUpdate) {
         return ;
     }
+   
+    bool hasValidTime = (timeStatus() == timeSet);
+
+    if (!hasValidTime) {
+        return ;
+    }
+
     setRTCDateTime((byte)UTC.hour(), (byte)UTC.minute(), (byte)UTC.second(), (byte)UTC.day(), (byte)UTC.month(), (byte)(UTC.year() % 100), (byte)UTC.weekday());
     syncRTCWithInternalTime();
+
     lastTimeNPTSync = millis();
+}
+
+boolean detectTimezone() {
+    String timeZone = getRequestLocation();
+    if (timeZone.isEmpty()) {
+        return false;
+    }
+    
+    return setTimeZone(timeZone);
 }
 
 String getRequestLocation() {

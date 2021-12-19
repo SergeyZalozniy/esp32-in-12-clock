@@ -12,8 +12,6 @@
 	<link rel="stylesheet" href="css/bootstrap.min.css">
 	<link rel="stylesheet" href="css/bootstrap-switch.css">
 	<link rel="stylesheet" href="css/template.css">
-	<link rel="stylesheet" href="css/slider1.css">
-	<link rel="stylesheet" href="css/slider2.css">
 
 <body>
 	<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
@@ -30,7 +28,7 @@
 
 			<div class="collapse navbar-collapse">
 				<ul class="nav navbar-nav">
-					<li class="active"><a href="/">Nixie Clock Settings</a></li>
+					<li class="active"><a href="/index.htm">Nixie Clock Settings</a></li>
 					<li><a href="settings.htm">Wi-Fi Settings</a></li>
 				</ul>
 			</div>
@@ -43,7 +41,7 @@
 
 				<div class="panel panel-default">
 					<div class="panel-heading">
-						<h5>Fimvare / SPIFFS  update</h5>
+						<h5>Fimware / SPIFFS  update</h5>
 					</div>
 					<div class="panel-body">
 						<div class="form-group form-group-lg">
@@ -54,19 +52,6 @@
 							<div id="prg" class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100">
 								Progress: <span>0%</span>
 							</div>
-						</div>
-
-						<div class="form-check" style="display: inline; margin-right: 15px;">
-							<input class="form-check-input" type="radio" name="upload-type" id="upload-type1" value="0" checked>
-							<label class="form-check-label" for="upload-type1">
-								Fimware
-							</label>
-						</div>
-						<div class="form-check" style="display: inline;">
-							<input class="form-check-input" type="radio" name="upload-type" id="upload-type2" value="100">
-							<label class="form-check-label" for="upload-type2">
-								SPIFFS
-							</label>
 						</div>
 
 						<div class="form-group form-group-lg" style="padding-top: 15px; margin: 0;">
@@ -87,7 +72,7 @@
 					  </div>
 					  <p id="timezone-selected-title">Curreny timezone: <span></span></p>
 				</div>
-				<div class="panel-body collapse in" id="timezone-panel">
+				<div class="panel-body collapse" id="timezone-panel">
 					<div class="form-group form-group-lg">
 						<input type="text" id="filter-timezones-input" class="filter-timezones form-control">
 
@@ -574,23 +559,18 @@
 	<script src="js/highlight.js"></script>
 	<script src="js/slider.js"></script>
 	<script src="js/bootstrap-switch.js"></script>
-	<script src="js/main.js"></script>
+	<script src="js/index.js"></script>
 
 	<script>
-
-		// $($("#prg")[0]).width(Math.round(.33 * 100) + "%");
-		// $($("#prg span")[0]).html(Math.round(.33 * 100) + "%");
-
 		$("form").submit(function (e) {
 			e.preventDefault();
 			var form = $("#upload_form")[0];
-			var uploadTypeValue = $('input[name=upload-type]:checked').val();
 			var data = new FormData(form);
 
 			$(".progress").css("display","block")
 
 			$.ajax({
-				url: "/update?type=" + uploadTypeValue,
+				url: "/update",
 				type: "POST",
 				data: data,
 				contentType: false,

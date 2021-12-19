@@ -1,8 +1,9 @@
-#include <EEPROM.h>
+#include <Arduino.h>
 
 #include "ezTime.h"
 
 #include "Helpers/Constants.h"
+#include "Helpers/EEPROMHelper.h"
 
 #include "TimeCalculation/BuildTime.h"
 #include "TimeCalculation/RealTimeClock.h"
@@ -32,9 +33,11 @@ ClockState state = timeState;
 void setup(){
   Serial.begin(115200);
 
+  setupEEPROM();
   setupLedStrip();
   setupIndication();
   setupBrightness();
+  turnOffLeds();
   setupWifi();
   setupLocalTime();
   setupRTC();
@@ -64,9 +67,12 @@ void loop() {
     doIndication(stringToDisplay, lowDot, upDot);
     if (isLedStripActive()) {
       turnOffLeds();
+      doEnumerationAndCorrectVoltage(4);
     }
   } else {
     updateLedColor();
+    doLoadingIndication();
+    forceCorrectVoltage();
     if (!isLedStripActive()) { 
       turnOffIndication();
     }
