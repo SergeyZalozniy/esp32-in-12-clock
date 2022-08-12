@@ -179,7 +179,7 @@ void setNumber(int digit) {
   }
   #endif
 
-  #ifdef VERSION_2
+  #if VERSION >= 2
   switch (digit)
   {
     case -1:

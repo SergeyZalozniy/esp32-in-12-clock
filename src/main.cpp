@@ -1,6 +1,7 @@
 #include <Arduino.h>
 
 #include "ezTime.h"
+#include "QC3Control.h"
 
 #include "Helpers/Constants.h"
 #include "Helpers/EEPROMHelper.h"
@@ -29,9 +30,13 @@ enum ClockState {
 String getStringToDisplay(bool &lowDot, bool &upDot);
 String getTransitionStep(String from, String to, byte iteration);
 ClockState state = timeState;
+// QC3Control quickCharge(usbDataPlus, usbDataMinus);
 
 void setup(){
   Serial.begin(115200);
+
+  // quickCharge.begin(true);
+  // quickCharge.set12V();
 
   setupEEPROM();
   setupLedStrip();
