@@ -3,7 +3,7 @@
 #include "Helpers/Constants.h"
 
 Adafruit_NeoPixel strip;
-bool stripIsActive = false;
+bool stripIsActive = true;
 unsigned long lastRainbowChange = 0;
 uint16_t j;
 
@@ -13,12 +13,12 @@ void setupLedStrip() {
     pinMode(ledStripPin, OUTPUT);
     strip = Adafruit_NeoPixel(stripLedCount, ledStripPin, NEO_RGB + NEO_KHZ800);
     strip.begin();
-    strip.setBrightness(0);    // яркость, от 0 до 255
     for (int i = 0; i < stripLedCount; i++ ) {   // от 0 до первой трети
         strip.setPixelColor(i, 0);     // залить  0xffffff
     }
     strip.show();                         // отправить на ленту
-    delay(10);                          // очистить
+    strip.setBrightness(0);              // яркость, от 0 до 255
+    delay(20);                          // очистить
 }
 
 void turnOffLeds() {
@@ -30,7 +30,7 @@ void turnOffLeds() {
     stripIsActive = false;
 }
 
-void updateLedColor(){
+void updateLedColor() {
     if  (millis() - lastRainbowChange < 5) {
         return ;
     }

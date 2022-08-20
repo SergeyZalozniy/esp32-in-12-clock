@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include <TinyGPS++.h>
 
+#include "ezTime.h"
+
 #include "BuildTime.h"
 #include "GPSTime.h"
 #include "RealTimeClock.h"

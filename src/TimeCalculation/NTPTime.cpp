@@ -8,8 +8,9 @@
 #include "../Helpers/EEPROMHelper.h"
 #include "RealTimeClock.h"
 #include "LocalTime.h"
+#include "../WebService/WebSocket.h"
 
-unsigned long lastTimeNPTSync = 0;
+unsigned long lastTimeNPTSync = 100000;
 
 String getRequestLocation();
 boolean detectTimezone();
@@ -18,7 +19,7 @@ void setupNTP() {
     if (WiFi.status() != WL_CONNECTED) {
         return ;
     }
-    setInterval(60 * 60);
+    setInterval(0);
     if (!readAutoTimezone()) {
         return ;
     }
@@ -30,23 +31,12 @@ void syncNTPTimeWithRTC() {
         return ;
     }
 
-    #if NTP_RETRY <= 3000
-    #error("Bad Idea, set NTP_RETRY to 60 minues") 
-    #endif
-
-    events();
-
-    bool needUpdate = (millis() - lastTimeNPTSync > 20 * 60 * 1000 || lastTimeNPTSync == 0);
-
+    bool needUpdate = millis() - lastTimeNPTSync > 60 * 60 * 1000;
     if (!needUpdate) {
         return ;
     }
-   
-    bool hasValidTime = (timeStatus() == timeSet);
 
-    if (!hasValidTime) {
-        return ;
-    }
+    updateNTP();
 
     setRTCDateTime((byte)UTC.hour(), (byte)UTC.minute(), (byte)UTC.second(), (byte)UTC.day(), (byte)UTC.month(), (byte)(UTC.year() % 100), (byte)UTC.weekday());
     syncRTCWithInternalTime();

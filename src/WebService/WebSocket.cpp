@@ -23,7 +23,7 @@ void setupWebSocket() {
 }
 
 void handleWebSocketClients() {
-    webSocket.loop();   
+  webSocket.loop();   
 }
 
 void webSocketSendCurrentState() {
@@ -35,6 +35,10 @@ void webSocketSendCurrentState() {
       webSocket.broadcastTXT(String((char) SocketCommands::autoTimeZone) + "false");
     }
     webSocket.broadcastTXT(String((char) SocketCommands::timezoneName) + getTimezoneName());
+}
+
+void sendSocketTXT(String str) {
+  webSocket.broadcastTXT(str);
 }
 
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {

@@ -42,7 +42,7 @@ void setup(){
   setupLedStrip();
   setupIndication();
   setupBrightness();
-  turnOffLeds();
+  
   setupWifi();
   setupLocalTime();
   setupRTC();
