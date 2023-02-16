@@ -30,18 +30,26 @@ enum ClockState {
 String getStringToDisplay(bool &lowDot, bool &upDot);
 String getTransitionStep(String from, String to, byte iteration);
 ClockState state = timeState;
-// QC3Control quickCharge(usbDataPlus, usbDataMinus);
+
+#if VERSION == 3
+QC3Control quickCharge(usbDataPlus, usbDataMinus);
+#endif
 
 void setup(){
-  Serial.begin(115200);
+#if VERSION == 3
+  quickCharge.begin();
+#endif
 
-  // quickCharge.begin(true);
-  // quickCharge.set12V();
+  Serial.begin(115200);
 
   setupEEPROM();
   setupLedStrip();
   setupIndication();
   setupBrightness();
+
+#if VERSION == 3
+  quickCharge.set12V();
+#endif
   
   setupWifi();
   setupLocalTime();

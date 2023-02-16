@@ -12,3 +12,5 @@ void saveWifiPassword(String value);
 boolean readAutoTimezone();
 void saveAutoTimezone(boolean value);
 
+boolean readGPSEnable();
+void saveGPSEnable(boolean value);

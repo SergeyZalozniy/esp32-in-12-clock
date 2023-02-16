@@ -4,6 +4,7 @@
 #include "../Helpers/EEPROMHelper.h"
 #include "../TimeCalculation/LocalTime.h"
 #include "../TimeCalculation/NTPTime.h"
+#include "../TimeCalculation/GPSTime.h"
 
 WebSocketsServer webSocket = WebSocketsServer(webSocketPort);
 
@@ -11,7 +12,8 @@ enum SocketCommands {
   wifiPassword = 1,
   wifiSSID,
   autoTimeZone,
-  timezoneName
+  timezoneName,
+  enableGPS
 };
 
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length);
@@ -33,6 +35,11 @@ void webSocketSendCurrentState() {
       webSocket.broadcastTXT(String((char) SocketCommands::autoTimeZone) + "true");
     } else {
       webSocket.broadcastTXT(String((char) SocketCommands::autoTimeZone) + "false");
+    }
+    if (readGPSEnable()) {
+      webSocket.broadcastTXT(String((char) SocketCommands::enableGPS) + "true");
+    } else {
+      webSocket.broadcastTXT(String((char) SocketCommands::enableGPS) + "false");
     }
     webSocket.broadcastTXT(String((char) SocketCommands::timezoneName) + getTimezoneName());
 }
@@ -69,19 +76,27 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
 
 void procceedSocketEvent(SocketCommands command, String value) {
   switch (command) {
-  case SocketCommands::autoTimeZone:
-    saveAutoTimezone(value.equalsIgnoreCase("true"));
-    if (readAutoTimezone()) {
-      detectTimezone();
-      webSocketSendCurrentState();
+  case SocketCommands::autoTimeZone: {
+      boolean autoTimeZone = value.equalsIgnoreCase("true");
+      saveAutoTimezone(autoTimeZone);
+      if (autoTimeZone) {
+        detectTimezone();
+        webSocketSendCurrentState();
+      }
+      break;
     }
-    break;
   case SocketCommands::timezoneName:
     if (readAutoTimezone()) {
       saveAutoTimezone(false);
     }
     setTimeZone(value);
     break;
+  case SocketCommands::enableGPS: {
+      boolean enableGPS = value.equalsIgnoreCase("true");
+      saveGPSEnable(enableGPS);
+      userDidUpdateGPSEnable(enableGPS);
+      break;
+    }
   default:
     break;
   }

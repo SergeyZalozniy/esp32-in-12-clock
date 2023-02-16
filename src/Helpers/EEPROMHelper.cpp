@@ -6,6 +6,7 @@
 #define passwordKey "password"
 #define ssidKey "ssid"
 #define autotimezoneKey "autotimezone"
+#define gpsEnableKey "gps-enable"
 
 Preferences prefs;
 
@@ -39,4 +40,12 @@ boolean readAutoTimezone() {
 
 void saveAutoTimezone(boolean value) {
     prefs.putBool(autotimezoneKey, value);
+}
+
+boolean readGPSEnable() {
+    return prefs.getBool(gpsEnableKey, true);
+}
+
+void saveGPSEnable(boolean value) {
+    prefs.putBool(gpsEnableKey, value);
 }

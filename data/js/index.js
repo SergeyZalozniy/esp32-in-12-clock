@@ -24,6 +24,12 @@ $(function() {
                 }
             case 4:
                 $('#timezone-selected-title span').text(value);
+            case 5:
+                if (value == 'true') {
+                    $('#gps-enable-checkbox')[0].checked = true;
+                } else {
+                    $('#gps-enable-checkbox')[0].checked = false;
+                }
             default:
                 break;
         }
@@ -55,6 +61,12 @@ $(function() {
         var autoTimeZone = $('#timezone-checkbox').is(":checked")
         var command = String.fromCharCode(3)
         websock.send(command + autoTimeZone);
+    });
+
+    $('#gps-enable-checkbox').on('change', function() {
+        var gpsEnabled = $('#gps-enable-checkbox').is(":checked")
+        var command = String.fromCharCode(5)
+        websock.send(command + gpsEnabled);
     });
     
     $('#filter-timezones-input').on('input', function(e) {

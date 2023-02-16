@@ -3,8 +3,7 @@ const int lampsCount = 4; // Количество ламп
 const String wifiName = "Nixie Clock";
 const int webSocketPort = 81;
 
-#define VERSION 2
-#define VERSION_2
+#define VERSION 1
 /* #### esp32 PINs  #### */
 #if VERSION == 1
     const int stripLedCount = 4;  // число диодов
@@ -40,8 +39,9 @@ const int webSocketPort = 81;
 #endif
 
 #if VERSION == 2
+    #define VERSION_2
     const int stripLedCount = 4;  // число диодов
-    const boolean hasDotDelimeter = true; // IN-12A - нет, IN-12B - да 
+    const boolean hasDotDelimeter = false; // IN-12A - нет, IN-12B - да 
     const int voltPin = 34; // Напряжение Анода
 
     const int lighSensor1Pin = 36; // Датчик света 1
@@ -62,17 +62,17 @@ const int webSocketPort = 81;
     const int decoder4Pin = 18;
 
     const int decimalPoint = 2;
-    const int anod1 = 13; //Анод 1
-    const int anod2 = 12; //Анод 2
-    const int anod3 = 33; //Анод 3
-    const int anod4 = 32; //Анод 4
+    const int anod4 = 13; //Анод 4
+    const int anod3 = 12; //Анод 3
+    const int anod2 = 33; //Анод 2
+    const int anod1 = 32; //Анод 1
 
     const int toch = 27; //Точки между сигментами низ
     const int toch2 = 26; //Точки между сигментами верх
     const bool hasLightSensor = false; 
 
-    const int minVoltage = 1750;
-    const int maxVoltage = 2050;
+    const int minVoltage = 1900;
+    const int maxVoltage = 1900;
 #endif
 
 #if VERSION == 3
