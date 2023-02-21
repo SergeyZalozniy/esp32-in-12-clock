@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include "ezTime.h"
 
-
+#include "../Helpers/Constants.h"
 #include "../Helpers/EEPROMHelper.h"
 
 Timezone localTimeZone;
@@ -16,13 +16,21 @@ time_t getLocalTime();
 String preZero(int digit);
 
 void setupLocalTime() {
-    if (localTimeZone.setCache("timezone", "cache")) {
+    if (localTimeZone.setCache(PREFERENCE_NAME_SPACE, F("timezone"))) {
         Serial.println(F("Has timezone cache"));
     }
 }
 
 boolean setTimeZone(String tz) {
-  return localTimeZone.setLocation(tz);
+  if (localTimeZone.setLocation(tz)) {
+    return true;
+  }
+  // Renamed timzezone in 2022 - Europe/Kiev -> Europe/Kyiv
+  if (tz == F("Europe/Kyiv")) {
+    return localTimeZone.setLocation(F("Europe/Kiev"));
+  }
+
+  return false;
 }
 
 String getTimezoneName() {
@@ -70,7 +78,7 @@ time_t getLocalTime() {
 String preZero(int digit) {
     digit = abs(digit);
     if (digit < 10) 
-        return String("0") + String(digit);
+        return String(F("0")) + String(digit);
     else 
         return String(digit);
 }

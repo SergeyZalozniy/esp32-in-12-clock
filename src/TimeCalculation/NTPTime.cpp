@@ -49,8 +49,8 @@ boolean detectTimezone() {
     if (timeZone.isEmpty()) {
         return false;
     }
-    
-    return setTimeZone(timeZone);
+    boolean result = setTimeZone(timeZone);
+    return result;
 }
 
 String getRequestLocation() {
@@ -67,7 +67,8 @@ String getRequestLocation() {
         if (JSON.typeof(myObject) == "undefined") {
             Serial.println(F("Parsing input failed!"));
         } else {
-            result = myObject["timezone"];
+            const char* result2 = myObject["timezone"];
+            result = String(result2);
         }
     }
     http.end();

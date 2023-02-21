@@ -33,6 +33,15 @@ void forceCorrectVoltage() {
   ledcWrite(pwmChannel, dutyCycle);
 }
 
+void turnOffPWM() {
+  ledcWrite(pwmChannel, 0);
+}
+
+void turnOnPWM() {
+  ledcWrite(pwmChannel, dutyCycle);
+}
+
+
 void correctVoltage() {
   if (millis() - lastTimeUpdateVoltage < 50) {
     return ;

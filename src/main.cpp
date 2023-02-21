@@ -1,7 +1,7 @@
 #include <Arduino.h>
 
 #include "ezTime.h"
-#include "QC3Control.h"
+// #include "QC3Control.h"
 
 #include "Helpers/Constants.h"
 #include "Helpers/EEPROMHelper.h"
@@ -50,14 +50,19 @@ void setup(){
 #if VERSION == 3
   quickCharge.set12V();
 #endif
-  
+
   setupWifi();
+
+  turnOffPWM();
+  
   setupLocalTime();
   setupRTC();
   setupGPS();
   setupNTP();
   setupWebServer();
   setupWebSocket();
+
+  turnOnPWM();
 }
 
 void loop() {

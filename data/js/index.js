@@ -22,14 +22,19 @@ $(function() {
                     $('#timezone-panel').collapse('show');
                     $('#timezone-checkbox')[0].checked = false;
                 }
+                break;
             case 4:
                 $('#timezone-selected-title span').text(value);
+                break;
             case 5:
                 if (value == 'true') {
                     $('#gps-enable-checkbox')[0].checked = true;
+                    console.log(value);
                 } else {
                     $('#gps-enable-checkbox')[0].checked = false;
+                    console.log(value);
                 }
+                break;
             default:
                 break;
         }

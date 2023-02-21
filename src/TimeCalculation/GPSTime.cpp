@@ -25,10 +25,6 @@ void syncGPSTimeWithRTC() {
     //     gpsEnabled = readGPSEnable();
     // }
 
-    if (!gpsEnabled) {
-        return ;
-    }
-
     byte hours, minutes, seconds, day, month, year, dayOfWeek = 0;
     if (getDataGps(hours, minutes, seconds, day, month, year)) {
         setRTCDateTime(hours, minutes, seconds, day, month, year, dayOfWeek);
@@ -40,6 +36,10 @@ bool getDataGps(byte &hour, byte &minute, byte &second, byte &day, byte &month, 
         char c = gpsSerial.read();
         
         if (!gps.encode(c)) {
+            return false;
+        }
+
+        if (!gpsEnabled) {
             return false;
         }
 

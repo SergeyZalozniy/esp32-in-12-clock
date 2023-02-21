@@ -21,7 +21,7 @@ byte anodesGroup = 0;
     pinMode(anod4, OUTPUT);
     pinMode(toch, OUTPUT);
 
-    #ifdef VERSION_2
+    #if VERSION >= 2
     pinMode(decimalPoint, OUTPUT);
     pinMode(toch2, OUTPUT);
     #endif
@@ -31,7 +31,7 @@ byte anodesGroup = 0;
   if ((micros() - lastTimeInterval1Started) < 2673)
     return ;
 
-  #ifdef VERSION_2
+  #if VERSION >= 2
   digitalWrite(decimalPoint, LOW);
   digitalWrite(toch2, upDot);
   #endif
@@ -59,7 +59,7 @@ void turnOffIndication() {
 
   digitalWrite(toch, false);
   setNumber(-1);
-  #ifdef VERSION_2
+  #if VERSION >= 2
   digitalWrite(toch2, false);
   #endif
 }
@@ -108,7 +108,7 @@ void doEnumerationAndCorrectVoltage(int seconds) {
 }
 
 void setNumber(int digit) {
-  #ifdef VERSION_FIRST
+  #if VERSION == 1
   switch (digit) {
     case -1:
       digitalWrite (decoder1Pin, HIGH);

@@ -3,6 +3,8 @@
 #include <SPIFFS.h>
 #include <ArduinoJson.h>
 
+#include "Constants.h"
+
 #define passwordKey "password"
 #define ssidKey "ssid"
 #define autotimezoneKey "autotimezone"
@@ -11,7 +13,7 @@
 Preferences prefs;
 
 void setupEEPROM() {
-    prefs.begin("credentials", false);
+    prefs.begin(PREFERENCE_NAME_SPACE, false);
 }
 
 int16_t timeZoneCacheAddress() {

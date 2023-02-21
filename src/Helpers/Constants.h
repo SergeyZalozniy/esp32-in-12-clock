@@ -1,7 +1,8 @@
 const int lampsCount = 4; // Количество ламп
 
-const String wifiName = "Nixie Clock";
+const String wifiName = F("Nixie Clock");
 const int webSocketPort = 81;
+#define PREFERENCE_NAME_SPACE "Nixie Settings"
 
 #define VERSION 1
 /* #### esp32 PINs  #### */
