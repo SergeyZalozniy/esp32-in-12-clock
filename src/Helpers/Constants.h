@@ -4,7 +4,7 @@ const String wifiName = F("Nixie Clock");
 const int webSocketPort = 81;
 #define PREFERENCE_NAME_SPACE "Nixie Settings"
 
-#define VERSION 1
+#define VERSION 2
 /* #### esp32 PINs  #### */
 #if VERSION == 1
     const int stripLedCount = 4;  // число диодов
@@ -35,8 +35,8 @@ const int webSocketPort = 81;
     const int toch = 14; //Точки между сигментами
     const bool hasLightSensor = true; 
 
-    const int minVoltage = 1700;
-    const int maxVoltage = 2050;
+    const int minVoltage = 1800;
+    const int maxVoltage = 1950;
 #endif
 
 #if VERSION == 2
@@ -63,17 +63,17 @@ const int webSocketPort = 81;
     const int decoder4Pin = 18;
 
     const int decimalPoint = 2;
-    const int anod4 = 13; //Анод 4
-    const int anod3 = 12; //Анод 3
-    const int anod2 = 33; //Анод 2
-    const int anod1 = 32; //Анод 1
+    const int anod1 = 13; //Анод 4
+    const int anod2 = 12; //Анод 3
+    const int anod3 = 33; //Анод 2
+    const int anod4 = 32; //Анод 1
 
     const int toch = 27; //Точки между сигментами низ
     const int toch2 = 26; //Точки между сигментами верх
     const bool hasLightSensor = false; 
 
-    const int minVoltage = 1900;
-    const int maxVoltage = 1900;
+    const int minVoltage = 1820;
+    const int maxVoltage = 1820;
 #endif
 
 #if VERSION == 3

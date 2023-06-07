@@ -34,7 +34,7 @@ void forceCorrectVoltage() {
 }
 
 void turnOffPWM() {
-  ledcWrite(pwmChannel, 0);
+  ledcWrite(pwmChannel, 255);
 }
 
 void turnOnPWM() {
