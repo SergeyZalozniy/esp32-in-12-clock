@@ -30,6 +30,7 @@ enum ClockState {
 String getStringToDisplay(bool &lowDot, bool &upDot);
 String getTransitionStep(String from, String to, byte iteration);
 ClockState state = timeState;
+bool initialVoltageCorrection = false;
 
 #if VERSION == 3
 QC3Control quickCharge(usbDataPlus, usbDataMinus);
@@ -43,15 +44,16 @@ void setup(){
   Serial.begin(115200);
 
   setupEEPROM();
-  setupLedStrip();
   setupIndication();
   setupBrightness();
+  setupLedStrip();
 
 #if VERSION == 3
   quickCharge.set12V();
 #endif
 
   setupWifi();
+  turnOffLeds();
 
   turnOffPWM();
   
@@ -83,14 +85,19 @@ void loop() {
     bool lowDot = false, upDot = false;
     String stringToDisplay = getStringToDisplay(lowDot, upDot);
     doIndication(stringToDisplay, lowDot, upDot);
-    if (isLedStripActive()) {
-      turnOffLeds();
+    if (isLedStripActive() || !initialVoltageCorrection) {
+      initialVoltageCorrection = true;
       doEnumerationAndCorrectVoltage(4);
+      turnOffLeds();
     }
   } else {
     updateLedColor();
-    doLoadingIndication();
-    forceCorrectVoltage();
+    if (hasDotDelimeter) {
+      doLoadingIndication();
+      forceCorrectVoltage();
+    } else {
+      turnOffPWM();
+    }
     if (!isLedStripActive()) { 
       turnOffIndication();
     }

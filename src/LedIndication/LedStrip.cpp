@@ -3,40 +3,34 @@
 #include "Helpers/Constants.h"
 
 Adafruit_NeoPixel strip;
-bool stripIsActive = true;
+bool stripIsActive = false;
 unsigned long lastRainbowChange = 0;
 uint16_t j;
 
 uint32_t wheel(byte WheelPos);
+void turnOffLeds();
 
 void setupLedStrip() {
     pinMode(ledStripPin, OUTPUT);
+    digitalWrite(ledStripPin, HIGH);
     strip = Adafruit_NeoPixel(stripLedCount, ledStripPin, NEO_RGB + NEO_KHZ800);
     strip.begin();
-    for (int i = 0; i < stripLedCount; i++ ) {   // от 0 до первой трети
-        strip.setPixelColor(i, 0);     // залить  0xffffff
-    }
-    strip.show();                         // отправить на ленту
-    strip.setBrightness(0);              // яркость, от 0 до 255
-    delay(20);                          // очистить
 }
 
 void turnOffLeds() {
     for (int i = 0; i < stripLedCount; i++ ) {   // от 0 до первой трети
         strip.setPixelColor(i, 0);     // залить  0xffffff
     }
-    strip.setBrightness(0);
     strip.show();
     stripIsActive = false;
 }
 
 void updateLedColor() {
-    if  (millis() - lastRainbowChange < 5) {
+    if  (millis() - lastRainbowChange < 10) {
         return ;
     }
 
     if (!stripIsActive) {
-        strip.setBrightness(255);
         stripIsActive = true;
     }
 
