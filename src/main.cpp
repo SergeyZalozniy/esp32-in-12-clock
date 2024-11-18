@@ -1,7 +1,6 @@
 #include <Arduino.h>
 
 #include "ezTime.h"
-// #include "QC3Control.h"
 
 #include "Helpers/Constants.h"
 #include "Helpers/EEPROMHelper.h"
@@ -21,37 +20,27 @@
 
 #include "LedIndication/LedStrip.h"
 
-enum ClockState { 
-  timeState,
-  transition,
-  date
-};
+hw_timer_t * indicationTimer = NULL;
+volatile bool initialVoltageCorrection = false;
 
-String getStringToDisplay(bool &lowDot, bool &upDot);
-String getTransitionStep(String from, String to, byte iteration);
-ClockState state = timeState;
-bool initialVoltageCorrection = false;
-
-#if VERSION == 3
-QC3Control quickCharge(usbDataPlus, usbDataMinus);
-#endif
+void IRAM_ATTR onLampIndication() { 
+  bool lowDot = false, upDot = false;
+  int *digits;
+  if (hasValidDateAndTime()) {
+    digits = getDigitsToDisplay(lowDot, upDot);
+  } else {
+    digits = getSeconds(lowDot, upDot);
+  }
+  doIndication(digits, lowDot, upDot);
+}
 
 void setup(){
-#if VERSION == 3
-  quickCharge.begin();
-#endif
-
   Serial.begin(115200);
 
   setupEEPROM();
   setupIndication();
   setupBrightness();
   setupLedStrip();
-
-#if VERSION == 3
-  quickCharge.set12V();
-#endif
-
   setupWifi();
   turnOffLeds();
 
@@ -65,6 +54,12 @@ void setup(){
   setupWebSocket();
 
   turnOnPWM();
+  turnOffLeds();
+
+  indicationTimer = timerBegin(1, 40, true);
+  timerAttachInterrupt(indicationTimer, &onLampIndication, true);
+  timerAlarmWrite(indicationTimer, 100, true);
+  timerAlarmEnable(indicationTimer); 
 }
 
 void loop() {
@@ -73,119 +68,30 @@ void loop() {
 
   updateDesireVoltageWithLightSensor(); 
 
-  if (state == transition) {
-    correctVoltage();
-  }
-
   syncRTCWithInternalTime();
   syncGPSTimeWithRTC();
   syncNTPTimeWithRTC();
-  
-  if (hasValidDateAndTime()) {
-    bool lowDot = false, upDot = false;
-    String stringToDisplay = getStringToDisplay(lowDot, upDot);
-    doIndication(stringToDisplay, lowDot, upDot);
-    if (isLedStripActive() || !initialVoltageCorrection) {
-      initialVoltageCorrection = true;
-      doEnumerationAndCorrectVoltage(4);
-      turnOffLeds();
-    }
-  } else {
-    updateLedColor();
-    if (hasDotDelimeter) {
-      doLoadingIndication();
-      forceCorrectVoltage();
-    } else {
-      turnOffPWM();
-    }
-    if (!isLedStripActive()) { 
-      turnOffIndication();
-    }
+
+  // if (isLedStripActive()) || !initialVoltageCorrection) {
+  //   initialVoltageCorrection = true;
+  //   doEnumerationAndCorrectVoltage(4);
+  //   turnOffLeds();
+  // }
+
+    //   } else {
+    //   updateLedColor();
+    //   if (hasDotDelimeter) {
+    //     doLoadingIndication();
+    //     forceCorrectVoltage();
+    //   } else {
+    //     turnOffPWM();
+    //   }
+    //   if (!isLedStripActive()) { 
+    //     turnOffIndication();
+    //   }
+    // }
+  if (getState() == transition) {
+    correctVoltage();
+    turnOffLeds();
   }
-}
-
-String getStringToDisplay(bool &lowDot, bool &upDot) {
-  static String currentStringToDisplay = "";
-  static ClockState transitionToState;
-  static unsigned long lastTimeStateChanged = 0;
-
-  switch (state) {
-  case timeState:
-    if (millis() - lastTimeStateChanged > 65000)  {
-      state = transition;
-      transitionToState = date;
-      lastTimeStateChanged = millis();
-    }
-    currentStringToDisplay = getCachedTimeString();
-    lowDot = second() % 2;
-    upDot = second() % 2;
-    break;
-  case transition: {
-    static byte iteration = 0;
-    static unsigned long lastTimeTransitionIteration = 0;
-    upDot = false;
-    lowDot = true;
-
-    if (millis() - lastTimeTransitionIteration < 90)  {
-      return currentStringToDisplay;
-    }
-
-    String toValue = "";
-    switch (transitionToState) {
-    case timeState:
-      toValue = getCachedTimeString();
-      break;
-    case date:
-      toValue = getCachedDateString();
-      break;
-    default:
-      break;
-    }
-    currentStringToDisplay = getTransitionStep(currentStringToDisplay, toValue, iteration);
-    iteration++;
-    lastTimeTransitionIteration = millis();
-    if (currentStringToDisplay == toValue) {
-      state = transitionToState;
-      iteration = 0;
-      lastTimeStateChanged = millis();
-    }
-
-    break;
-  }
-  case date:
-     if (millis() - lastTimeStateChanged > 5000)  {
-      state = transition;
-      transitionToState = timeState;
-      lastTimeStateChanged = millis();
-    }
-    currentStringToDisplay = getCachedDateString();
-    lowDot = true;
-    upDot = false;
-    break;
-  }
-
-  return currentStringToDisplay;
-} 
-
-String getTransitionStep(String from, String to, byte iteration) {
-  if (from.length() != to.length()) {
-    return from;
-  }
-  int count = from.length();
-  String result = "";
-  byte divChar = '9' + 1;
-  for (int i = 0; i < count; i++) {
-    byte curFrom = from[i];
-    byte curTo = to[i];
-    if (curFrom == curTo && iteration > 10) {
-      result += char(curFrom);
-    } else {
-      if (curFrom == '9') {
-        result += '0';
-      } else {
-        result += char((curFrom + 1) % divChar);
-      }
-    }
-  }
-  return result;
 }

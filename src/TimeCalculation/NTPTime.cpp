@@ -27,21 +27,21 @@ void setupNTP() {
 }
 
 void syncNTPTimeWithRTC() {
-    if (WiFi.status() != WL_CONNECTED) {
-        return ;
-    }
-
     bool needUpdate = millis() - lastTimeNPTSync > 60 * 60 * 1000;
     if (!needUpdate) {
         return ;
     }
 
+    if (WiFi.status() != WL_CONNECTED) {
+        return ;
+    }
+
+    lastTimeNPTSync = millis();
+
     updateNTP();
 
     setRTCDateTime((byte)UTC.hour(), (byte)UTC.minute(), (byte)UTC.second(), (byte)UTC.day(), (byte)UTC.month(), (byte)(UTC.year() % 100), (byte)UTC.weekday());
     syncRTCWithInternalTime();
-
-    lastTimeNPTSync = millis();
 }
 
 boolean detectTimezone() {
@@ -65,7 +65,7 @@ String getRequestLocation() {
         JSONVar myObject = JSON.parse(payload);
 
         if (JSON.typeof(myObject) == "undefined") {
-            Serial.println(F("Parsing input failed!"));
+            // Serial.println(F("Parsing input failed!"));
         } else {
             const char* result2 = myObject["timezone"];
             result = String(result2);

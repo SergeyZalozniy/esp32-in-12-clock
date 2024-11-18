@@ -24,11 +24,11 @@ void setAimVoltage(int voltage) {
 void forceCorrectVoltage() {
   int volt = analogRead(voltPin);
   if (volt - aimVoltage > 5)
-    dutyCycle  += 1;
+    dutyCycle += 1;
   else if (volt - aimVoltage < 5)
     dutyCycle -= 1;
 
-  dutyCycle = max(dutyCycle, 15);
+  dutyCycle = max(dutyCycle, 55);
   dutyCycle = min(dutyCycle, 240);
   ledcWrite(pwmChannel, dutyCycle);
 }
@@ -40,7 +40,6 @@ void turnOffPWM() {
 void turnOnPWM() {
   ledcWrite(pwmChannel, dutyCycle);
 }
-
 
 void correctVoltage() {
   if (millis() - lastTimeUpdateVoltage < 50) {

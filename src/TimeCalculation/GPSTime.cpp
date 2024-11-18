@@ -67,20 +67,20 @@ bool getDataGps(byte &hour, byte &minute, byte &second, byte &day, byte &month, 
         month = date.month();
         year = (byte)(date.year() % 100);
 
-        Serial.print(F("GPSTime Sync - "));
-        Serial.print(hour);
-        Serial.print(F(":"));
-        Serial.print(minute);
-        Serial.print(F(":"));
-        Serial.print(second);
+        // Serial.print(F("GPSTime Sync - "));
+        // Serial.print(hour);
+        // Serial.print(F(":"));
+        // Serial.print(minute);
+        // Serial.print(F(":"));
+        // Serial.print(second);
 
-        Serial.print(F(" ### "));
+        // Serial.print(F(" ### "));
 
-        Serial.print(day);
-        Serial.print(F("/"));
-        Serial.print(month);
-        Serial.print(F("/"));
-        Serial.println(year);
+        // Serial.print(day);
+        // Serial.print(F("/"));
+        // Serial.print(month);
+        // Serial.print(F("/"));
+        // Serial.println(year);
 
         lastTimeGPSSync = millis();
         

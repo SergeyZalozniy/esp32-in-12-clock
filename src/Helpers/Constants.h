@@ -1,8 +1,9 @@
 const int lampsCount = 4; // Количество ламп
 
-const String wifiName = F("Nixie Clock");
+const String wifiName = F("Nixie Clock v1.0");
 const int webSocketPort = 81;
 #define PREFERENCE_NAME_SPACE "Nixie Settings"
+#define SIMPLE_ANIMATION true
 
 #define VERSION 2
 /* #### esp32 PINs  #### */
@@ -73,7 +74,7 @@ const int webSocketPort = 81;
     const bool hasLightSensor = false; 
 
     const int minVoltage = 1880;
-    const int maxVoltage = 1880;
+    const int maxVoltage = minVoltage;
 #endif
 
 #if VERSION == 3
@@ -111,19 +112,18 @@ const int webSocketPort = 81;
     const int usbDataPlus = 17;
     const int usbDataMinus = 16;
 
-    const int minVoltage = 1800;
-    const int maxVoltage = 2000;
+    const int minVoltage = 1870;
+    const int maxVoltage = 1870;
 #endif
 
 /* #### esp32 PINs end  #### */
 
 
 // setting PWM properties
-const int freq = 32000;
+// const int freq = 14584;
+const int freq = 16584;
 const int pwmChannel = 0;
 const int resolution = 8;
 const int defaultDuty = 255;
 
 // Voltage regulation range
-
-

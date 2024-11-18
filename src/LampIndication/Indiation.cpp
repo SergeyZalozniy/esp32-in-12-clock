@@ -1,13 +1,21 @@
 #include <Arduino.h>
 
-#include "../Helpers/Constants.h"
-#include "Brightness.h"
+#include "ezTime.h"
 
-int anodesSequence[] = {anod1, anod2, anod3, anod4};
+#include "../Helpers/Constants.h"
+#include "../TimeCalculation/LocalTime.h"
+#include "Brightness.h"
+#include "Indication.h"
+
+const int anodesSequence[lampsCount] = {anod1, anod2, anod3, anod4};
 unsigned long lastTimeInterval1Started = 0;
 byte anodesGroup = 0;
+volatile ClockState state = transition;
+static int seconds[lampsCount];
+int* digitsToDisplay = seconds;
 
  void setNumber(int digit);
+ int* getTransitionStep(int *from, int *to, byte iteration);
 
  void setupIndication() {
     pinMode(decoder1Pin, OUTPUT);
@@ -21,15 +29,118 @@ byte anodesGroup = 0;
     pinMode(anod4, OUTPUT);
     pinMode(toch, OUTPUT);
 
-    #if VERSION >= 2
+    #if VERSION == 2
     pinMode(decimalPoint, OUTPUT);
     pinMode(toch2, OUTPUT);
     #endif
  }
- 
- void doIndication(String valueToDisplay, bool lowDot, bool upDot) {
-  if ((micros() - lastTimeInterval1Started) < 2673)
+
+ClockState getState() {
+  return state;
+}
+
+int* getSeconds(bool &lowDot, bool &upDot) {
+  static int seconds[lampsCount];
+  lowDot = second() % 2;
+  upDot = second() % 2;
+
+  int number = second() % 10;
+  for (int i = 0; i < lampsCount; i++) {
+    seconds[i] = number;
+  }
+  return seconds;
+}
+
+int* getDigitsToDisplay(bool &lowDot, bool &upDot) {
+  static ClockState transitionToState;
+  static unsigned long lastTimeStateChanged = 0;
+
+  switch (state) {
+  case timeState:
+    if (millis() - lastTimeStateChanged > 65000)  {
+      state = transition;
+      transitionToState = date;
+      lastTimeStateChanged = millis();
+    }
+    digitsToDisplay = getCachedTime();
+    lowDot = second() % 2;
+    upDot = second() % 2;
+    break;
+  case transition: {
+    static byte iteration = 0;
+    static unsigned long lastTimeTransitionIteration = UINT_MAX;
+    upDot = false;
+    lowDot = true;
+
+    if (millis() - lastTimeTransitionIteration < 90)  {
+      return digitsToDisplay;
+    }
+    lastTimeTransitionIteration = millis();
+
+    int* toValue;
+    switch (transitionToState) {
+    case timeState:
+      toValue = getCachedTime();
+      break;
+    case date:
+      toValue = getCachedDate();
+      break;
+    default:
+      break;
+    }
+    digitsToDisplay = getTransitionStep(digitsToDisplay, toValue, iteration);
+    iteration++;
+
+    bool reachToValue = true;
+    for (int i = 0; i < lampsCount; i++) {
+      bool isEqual = digitsToDisplay[i] == toValue[i];
+      reachToValue = reachToValue && isEqual;
+    }
+    
+    if (reachToValue) {
+      state = transitionToState;
+      iteration = 0;
+      lastTimeStateChanged = millis();
+    }
+
+    break;
+  }
+  case date:
+     if (millis() - lastTimeStateChanged > 5000)  {
+      state = transition;
+      transitionToState = timeState;
+      lastTimeStateChanged = millis();
+    }
+    digitsToDisplay = getCachedDate();
+    lowDot = true;
+    upDot = false;
+    break;
+  }
+
+  return digitsToDisplay;
+} 
+
+int* getTransitionStep(int *from, int *to, byte iteration) {
+  static int result[lampsCount];
+  for (int i = 0; i < lampsCount; i++) {
+    int curFrom = from[i];
+    int curTo = to[i];
+    if (curFrom == curTo && iteration > 10) {
+      result[i] = curFrom;
+    } else {
+      result[i] = (curFrom + 1) % 10;
+    }
+  }
+  return result;
+}
+
+ void doIndication(int *digits, bool lowDot, bool upDot) {
+  if ((micros() - lastTimeInterval1Started) < 3173)
     return ;
+  lastTimeInterval1Started = micros();
+
+  int anode = anodesSequence[anodesGroup];
+  digitalWrite(anode, LOW);
 
   #if VERSION >= 2
   digitalWrite(decimalPoint, LOW);
@@ -37,18 +148,14 @@ byte anodesGroup = 0;
   #endif
 
   digitalWrite(toch, lowDot);
-
-  int anode = anodesSequence[anodesGroup];
-  digitalWrite(anode, LOW);
-  delayMicroseconds(650);
+  
+  delayMicroseconds(500);
   anodesGroup = (anodesGroup + 1) % lampsCount;
 
   anode = anodesSequence[anodesGroup];
-  int digit = valueToDisplay.substring(anodesGroup, anodesGroup + 1).toInt();
-  setNumber(digit);
-  digitalWrite(anode, HIGH);
+  setNumber(digits[anodesGroup]);
 
-  lastTimeInterval1Started = micros();
+  digitalWrite(anode, HIGH);
 }
 
 void turnOffIndication() {
@@ -59,16 +166,17 @@ void turnOffIndication() {
 
   digitalWrite(toch, false);
   setNumber(-1);
-  #if VERSION >= 2
+  #if VERSION == 2
   digitalWrite(toch2, false);
   #endif
 }
 
 void doLoadingIndication() {
+  static boolean directionUp = true;
+
   if (!hasDotDelimeter) {
     return ;
   }
-  static boolean directionUp = true;
   if ((micros() - lastTimeInterval1Started) < 128000)
     return ;
 
@@ -93,16 +201,16 @@ void doLoadingIndication() {
 void doEnumerationAndCorrectVoltage(int seconds) {
   unsigned long startTime = millis();
 	unsigned long millisElapse = 0;
+  int digits[lampsCount];
 	setAimVoltage(minVoltage + (maxVoltage - minVoltage) * 0.85);
 	while (millisElapse < seconds * 1000) {
 		millisElapse = millis() - startTime;
 		int number = (millisElapse / 100) % 10;
-		String stringToDisplay = "";
 		for (int i = 0; i < lampsCount; i++) {
-			stringToDisplay += String(number);
+			digits[i] = number;
 		}
 		forceCorrectVoltage();
-		doIndication(stringToDisplay, true, true);
+		doIndication(digits, true, true);
 	}
 	setAimVoltage((maxVoltage + minVoltage) / 2);
 }

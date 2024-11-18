@@ -1,7 +1,16 @@
 #include <Arduino.h>
 
+enum ClockState { 
+  timeState,
+  transition,
+  date
+};
+
 void setupIndication();
-void doIndication(String valueToDisplay, bool lowDot, bool upDot);
+ClockState getState();
+int* getSeconds(bool &lowDot, bool &upDot);
+int* getDigitsToDisplay(bool &lowDot, bool &upDot);
+void doIndication(int *digits, bool lowDot, bool upDot);
 void turnOffIndication();
 void doLoadingIndication();
 void doEnumerationAndCorrectVoltage(int);

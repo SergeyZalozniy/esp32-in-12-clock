@@ -3,8 +3,9 @@
 #include "Helpers/Constants.h"
 
 Adafruit_NeoPixel strip;
-bool stripIsActive = false;
-unsigned long lastRainbowChange = 0;
+volatile bool stripIsActive = false;
+unsigned long lastRainbowChange = UINT_MAX;
+unsigned long lastTurnOffLEDs = UINT_MAX;
 uint16_t j;
 
 uint32_t wheel(byte WheelPos);
@@ -18,6 +19,11 @@ void setupLedStrip() {
 }
 
 void turnOffLeds() {
+    if  (millis() - lastTurnOffLEDs < 500) {
+        return ;
+    }
+    lastTurnOffLEDs = millis();
+
     for (int i = 0; i < stripLedCount; i++ ) {   // от 0 до первой трети
         strip.setPixelColor(i, 0);     // залить  0xffffff
     }

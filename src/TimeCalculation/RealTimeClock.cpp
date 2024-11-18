@@ -23,17 +23,17 @@ boolean hasValidDateAndTime() {
 }
 
 void syncRTCWithInternalTime() {
-  static unsigned long lastTimeRTCSync = 0;
-  if ((millis() - lastTimeRTCSync) < 10000 && lastTimeRTCSync != 0) {
+  static unsigned long lastTimeRTCSync = UINT_MAX;
+  if (millis() - lastTimeRTCSync < 10000) {
     return ;
   }
+  lastTimeRTCSync = millis();
 
   byte hours, minutes, seconds, day, month, year, dayOfWeek;
   getRTCTime(seconds, minutes, hours, dayOfWeek, day, month, year);
 
   setTime((int)hours, (int)minutes, (int)seconds, (int)day, (int)month, (int)year);
   dateTimeIsValid = defaultTZ->year() >= BUILD_YEAR;
-  lastTimeRTCSync = millis();
 }
 
 void setRTCDateTime(byte h, byte m, byte s, byte d, byte mon, byte y, byte w) {

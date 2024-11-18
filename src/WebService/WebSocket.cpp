@@ -61,8 +61,8 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
       String value = String(buf + 1);
       byte command = buf[0];
 
-      Serial.println(command);
-      Serial.println(value);
+      // Serial.println(command);
+      // Serial.println(value);
       procceedSocketEvent((SocketCommands) command, value);
       break;
     }

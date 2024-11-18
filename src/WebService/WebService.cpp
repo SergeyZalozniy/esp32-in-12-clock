@@ -1,4 +1,5 @@
 #include <ESPmDNS.h>
+#include <DNSServer.h>
 #include <FS.h>
 #include <SPIFFS.h>
 #include <WiFiUdp.h>
@@ -12,22 +13,30 @@ WiFiUDP Udp;
 WiFiUDP ntpUDP;
 File fsUploadFile;
 WebServer server(80);
+DNSServer dnsServer;
 
 void HTTP_init();
+bool handleFileRead(String path);
 
 void setupWebServer() {
     server.enableDelay(false);
     SPIFFS.begin();
     if (MDNS.begin("nixie")) {
-        Serial.println(F("MDNS responder started"));
+        // Serial.println(F("MDNS responder started"));
         if (MDNS.addService("_http", "_tcp", 80)) {
-            Serial.println(F("Add _http port 80"));
+            // Serial.println(F("Add _http port 80"));
         }
         if (MDNS.addService("_ws", "_tcp", 81)) {
-            Serial.println(F("Add _ws port 81"));
+            // Serial.println(F("Add _ws port 81"));
         }
     } else {
-        Serial.println(F("MDNS.begin failed"));
+        // Serial.println(F("MDNS.begin failed"));
+    }
+
+    if (WiFi.status() != WL_CONNECTED) {
+        dnsServer.setTTL(300);
+        dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
+        dnsServer.start(53, "*", WiFi.softAPIP());
     }
 
     HTTP_init();
@@ -35,7 +44,31 @@ void setupWebServer() {
 
 void handleClient() {
     server.handleClient();
+    if (WiFi.status() != WL_CONNECTED) {
+        dnsServer.processNextRequest();
+    }
 }
+
+class CaptiveRequestHandler : public RequestHandler {
+public:
+  CaptiveRequestHandler() {}
+  virtual ~CaptiveRequestHandler() {}
+
+  bool canHandle(HTTPMethod method, String uri) {
+    if (uri.startsWith("/js/") || uri.startsWith("/css/")) {
+        return false;
+    }
+    return (uri != "/ssid") && 
+    (uri != "/index.htm") &&
+    (uri != "/update");
+  }
+
+  bool handle(WebServer& server, HTTPMethod requestMethod, String requestUri) {
+    // Serial.println(requestUri);
+
+    return handleFileRead("/settings.htm");
+  }
+};
 
 String formatBytes(size_t bytes) {
     if (bytes < 1024) {
@@ -217,7 +250,9 @@ void HTTP_init() {
                     // server.send(200, "text/plain", "Fail");
                 // }
                });
-
+    if (WiFi.status() != WL_CONNECTED) {
+        server.addHandler(new CaptiveRequestHandler());
+    }
     server.on("/", HTTP_GET, []()
               {
                   if (!handleFileRead("/settings.htm"))
@@ -255,6 +290,8 @@ void HTTP_init() {
                   saveWifiPassword(server.arg("password"));
                   saveWifiSSID(server.arg("ssid"));
                   server.send(200, "text/plain", "OK");
+                  server.client().stop();
+                  server.stop();
                   delay(200);
                   ESP.restart();  
               });
@@ -314,5 +351,5 @@ void HTTP_init() {
                   json = String();
               });
     server.begin();
-    Serial.println(F("HTTP server started"));
+    // Serial.println(F("HTTP server started"));
 }

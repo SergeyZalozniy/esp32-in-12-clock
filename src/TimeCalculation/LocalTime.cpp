@@ -6,18 +6,17 @@
 
 Timezone localTimeZone;
 
-String updatedTime = "";
-unsigned long lastTimeStringWasUpdated;
+int *updatedTime;
+unsigned long lastTimeStringWasUpdated = UINT_MAX;
 
-String updatedDate = "";
-unsigned long lastDateStringWasUpdated;
+int *updatedDate;
+unsigned long lastDateStringWasUpdated = UINT_MAX;
 
 time_t getLocalTime();
-String preZero(int digit);
 
 void setupLocalTime() {
     if (localTimeZone.setCache(PREFERENCE_NAME_SPACE, F("timezone"))) {
-        Serial.println(F("Has timezone cache"));
+        // Serial.println(F("Has timezone cache"));
     }
 }
 
@@ -37,24 +36,38 @@ String getTimezoneName() {
   return localTimeZone.getTimezoneName();
 }
 
-String getTime() {
-    return preZero(localTimeZone.hour()) + preZero(localTimeZone.minute());
+int* getTime() {
+  static int time[lampsCount];
+  int hours = localTimeZone.hour();
+  int minutes = localTimeZone.minute();
+  time[0] = hours / 10;
+  time[1] = hours % 10;
+  time[2] = minutes / 10;
+  time[3] = minutes % 10;
+  return time;
 }
 
-String getDate() {
-    return preZero(localTimeZone.day()) + preZero(localTimeZone.month());
+int* getDate() {
+  static int date[lampsCount];
+  int day = localTimeZone.day();
+  int month = localTimeZone.month();
+  date[0] = day / 10;
+  date[1] = day % 10;
+  date[2] = month / 10;
+  date[3] = month % 10;
+  return date;
 }
 
-String getCachedTimeString() {
-  if (millis() - lastTimeStringWasUpdated > 1000 || lastTimeStringWasUpdated == 0) {
+int* getCachedTime() {
+  if (millis() - lastTimeStringWasUpdated > 1000) {
     updatedTime = getTime();
     lastTimeStringWasUpdated = millis();
   }
   return updatedTime;
 }
 
-String getCachedDateString() {
-  if (millis() - lastDateStringWasUpdated > 5000 || lastDateStringWasUpdated == 0) {
+int* getCachedDate() {
+  if (millis() - lastDateStringWasUpdated > 15000) {
     updatedDate = getDate();
     lastDateStringWasUpdated = millis();
   }
@@ -73,12 +86,4 @@ time_t getLocalTime() {
     }
 
     return utc + deltaTime;
-}
-
-String preZero(int digit) {
-    digit = abs(digit);
-    if (digit < 10) 
-        return String(F("0")) + String(digit);
-    else 
-        return String(digit);
 }

@@ -3,7 +3,7 @@
 void setupLocalTime();
 boolean setTimeZone(String tz);
 String getTimezoneName();
-String getTime();
-String getDate();
-String getCachedTimeString();
-String getCachedDateString();
+int* getTime();
+int* getDate();
+int* getCachedTime();
+int* getCachedDate();
