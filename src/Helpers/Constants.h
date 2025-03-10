@@ -1,6 +1,6 @@
 const int lampsCount = 4; // Количество ламп
 
-const String wifiName = F("Nixie Clock v1.0");
+const String wifiName = F("Nixie Clock v2.0");
 const int webSocketPort = 81;
 #define PREFERENCE_NAME_SPACE "Nixie Settings"
 #define SIMPLE_ANIMATION true
