@@ -7,7 +7,7 @@
 #include "Brightness.h"
 #include "Indication.h"
 
-const int anodesSequence[lampsCount] = {anod1, anod2, anod3, anod4};
+const int anodesSequence[lampsCount] = {anod4, anod3, anod2, anod1};
 unsigned long lastTimeInterval1Started = 0;
 byte anodesGroup = 0;
 volatile ClockState state = transition;
@@ -29,7 +29,7 @@ int* digitsToDisplay = seconds;
     pinMode(anod4, OUTPUT);
     pinMode(toch, OUTPUT);
 
-    #if VERSION == 2
+    #if VERSION >= 2
     pinMode(decimalPoint, OUTPUT);
     pinMode(toch2, OUTPUT);
     #endif
@@ -143,7 +143,7 @@ int* getTransitionStep(int *from, int *to, byte iteration) {
   digitalWrite(anode, LOW);
 
   #if VERSION >= 2
-  digitalWrite(decimalPoint, LOW);
+  // digitalWrite(decimalPoint, LOW);
   digitalWrite(toch2, upDot);
   #endif
 
@@ -180,7 +180,7 @@ void doLoadingIndication() {
   if ((micros() - lastTimeInterval1Started) < 128000)
     return ;
 
-  digitalWrite(decimalPoint, HIGH);
+  // digitalWrite(decimalPoint, HIGH);
   int anode = anodesSequence[anodesGroup];
   
   digitalWrite(anode, LOW);
@@ -287,7 +287,7 @@ void setNumber(int digit) {
   }
   #endif
 
-  #if VERSION >= 2
+  #if VERSION == 2
   switch (digit)
   {
     case -1:
@@ -355,6 +355,89 @@ void setNumber(int digit) {
       digitalWrite (decoder2Pin, LOW);
       digitalWrite (decoder3Pin, LOW);
       digitalWrite (decoder4Pin, LOW);
+      break;
+  }
+  #endif
+
+  #if VERSION == 3
+  switch (digit % 10)
+  {
+    case -1:
+      digitalWrite (decoder1Pin, HIGH);
+      digitalWrite (decoder2Pin, HIGH);
+      digitalWrite (decoder3Pin, HIGH);
+      digitalWrite (decoder4Pin, HIGH);
+      digitalWrite (decimalPoint, LOW);
+      break;
+    case 0:
+      digitalWrite (decimalPoint, HIGH);
+      digitalWrite (decoder1Pin, LOW);
+      digitalWrite (decoder2Pin, LOW);
+      digitalWrite (decoder3Pin, LOW);
+      digitalWrite (decoder4Pin, HIGH);
+      break;
+    case 9:
+      digitalWrite (decoder1Pin, HIGH);
+      digitalWrite (decoder2Pin, HIGH);
+      digitalWrite (decoder3Pin, LOW);
+      digitalWrite (decoder4Pin, LOW);
+      digitalWrite (decimalPoint, LOW);
+      break;
+    case 8:
+      digitalWrite (decoder1Pin, HIGH);
+      digitalWrite (decoder2Pin, LOW);
+      digitalWrite (decoder3Pin, LOW);
+      digitalWrite (decoder4Pin, LOW);
+      digitalWrite (decimalPoint, LOW);
+      break;
+    case 7:
+      digitalWrite (decoder1Pin, LOW);
+      digitalWrite (decoder2Pin, HIGH);
+      digitalWrite (decoder3Pin, LOW);
+      digitalWrite (decoder4Pin, LOW);
+      digitalWrite (decimalPoint, LOW);
+      break;
+    case 6:
+      digitalWrite (decoder1Pin, LOW);
+      digitalWrite (decoder2Pin, LOW);
+      digitalWrite (decoder3Pin, HIGH);
+      digitalWrite (decoder4Pin, LOW);
+      digitalWrite (decimalPoint, LOW);
+      break;
+    case 5:
+      digitalWrite (decoder1Pin, LOW);
+      digitalWrite (decoder2Pin, HIGH);
+      digitalWrite (decoder3Pin, HIGH);
+      digitalWrite (decoder4Pin, LOW);
+      digitalWrite (decimalPoint, LOW);
+      break;
+    case 4:
+      digitalWrite (decoder1Pin, HIGH);
+      digitalWrite (decoder2Pin, LOW);
+      digitalWrite (decoder3Pin, HIGH);
+      digitalWrite (decoder4Pin, LOW);
+      digitalWrite (decimalPoint, LOW);
+      break;
+    case 3:
+      digitalWrite (decoder1Pin, HIGH);
+      digitalWrite (decoder2Pin, LOW);
+      digitalWrite (decoder3Pin, LOW);
+      digitalWrite (decoder4Pin, HIGH);
+      digitalWrite (decimalPoint, LOW);
+      break;
+    case 2:
+      digitalWrite (decoder1Pin, HIGH);
+      digitalWrite (decoder2Pin, HIGH);
+      digitalWrite (decoder3Pin, HIGH);
+      digitalWrite (decoder4Pin, LOW);
+      digitalWrite (decimalPoint, LOW);
+      break;
+    case 1: // 
+      digitalWrite (decoder1Pin, LOW);
+      digitalWrite (decoder2Pin, LOW);
+      digitalWrite (decoder3Pin, LOW);
+      digitalWrite (decoder4Pin, LOW);
+      digitalWrite (decimalPoint, LOW);
       break;
   }
   #endif

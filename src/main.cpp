@@ -42,7 +42,7 @@ void setup(){
   setupBrightness();
   setupLedStrip();
   setupWifi();
-  turnOffLeds();
+  // turnOffLeds();
 
   turnOffPWM();
   

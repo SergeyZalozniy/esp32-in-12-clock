@@ -5,7 +5,7 @@ const int webSocketPort = 81;
 #define PREFERENCE_NAME_SPACE "Nixie Settings"
 #define SIMPLE_ANIMATION true
 
-#define VERSION 2
+#define VERSION 3
 /* #### esp32 PINs  #### */
 #if VERSION == 1
     const int stripLedCount = 4;  // число диодов
@@ -43,7 +43,7 @@ const int webSocketPort = 81;
 #if VERSION == 2
     #define VERSION_2
     const int stripLedCount = 4;  // число диодов
-    const boolean hasDotDelimeter = false; // IN-12A - нет, IN-12B - да 
+    const boolean hasDotDelimeter = true; // IN-12A - нет, IN-12B - да 
     const int voltPin = 34; // Напряжение Анода
 
     const int lighSensor1Pin = 36; // Датчик света 1
@@ -79,7 +79,7 @@ const int webSocketPort = 81;
 
 #if VERSION == 3
     const int stripLedCount = 8;  // число диодов
-    const boolean hasDotDelimeter = false; // IN-4
+    const boolean hasDotDelimeter = true; // IN-4
     const int voltPin = 34; // Напряжение Анода
 
     const int lighSensor1Pin = 36; // Датчик света 1
@@ -109,11 +109,8 @@ const int webSocketPort = 81;
     const int toch2 = 26; //Точки между сигментами верх
     const bool hasLightSensor = false; 
 
-    const int usbDataPlus = 17;
-    const int usbDataMinus = 16;
-
-    const int minVoltage = 1870;
-    const int maxVoltage = 1870;
+    const int minVoltage = 1880;
+    const int maxVoltage = minVoltage;
 #endif
 
 /* #### esp32 PINs end  #### */
