@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pio run)",
+      "Bash(platformio run:*)",
+      "Bash(~/.platformio/penv/bin/pio run:*)"
+    ]
+  }
+}

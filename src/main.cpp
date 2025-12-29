@@ -36,7 +36,6 @@ void IRAM_ATTR onLampIndication() {
 
 void setup(){
   Serial.begin(115200);
-
   setupEEPROM();
   setupIndication();
   setupBrightness();
@@ -56,6 +55,10 @@ void setup(){
   turnOnPWM();
   turnOffLeds();
 
+  // Initialize cache before starting ISR
+  updateTimeCache();
+  updateSecondsCache();
+
   indicationTimer = timerBegin(1, 40, true);
   timerAttachInterrupt(indicationTimer, &onLampIndication, true);
   timerAlarmWrite(indicationTimer, 100, true);
@@ -66,12 +69,14 @@ void loop() {
   handleClient();
   handleWebSocketClients();
 
-  updateDesireVoltageWithLightSensor(); 
+  updateDesireVoltageWithLightSensor();
+  updateTimeCache();
+  updateSecondsCache();
 
   syncRTCWithInternalTime();
   syncGPSTimeWithRTC();
   syncNTPTimeWithRTC();
-
+  
   // if (isLedStripActive()) || !initialVoltageCorrection) {
   //   initialVoltageCorrection = true;
   //   doEnumerationAndCorrectVoltage(4);

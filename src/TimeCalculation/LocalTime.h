@@ -5,5 +5,6 @@ boolean setTimeZone(String tz);
 String getTimezoneName();
 int* getTime();
 int* getDate();
-int* getCachedTime();
-int* getCachedDate();
+int* IRAM_ATTR getCachedTime();
+int* IRAM_ATTR getCachedDate();
+void updateTimeCache();

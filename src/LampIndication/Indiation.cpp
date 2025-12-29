@@ -14,8 +14,8 @@ volatile ClockState state = transition;
 static int seconds[lampsCount];
 int* digitsToDisplay = seconds;
 
- void setNumber(int digit);
- int* getTransitionStep(int *from, int *to, byte iteration);
+ void IRAM_ATTR setNumber(int digit);
+ int* IRAM_ATTR getTransitionStep(int *from, int *to, byte iteration);
 
  void setupIndication() {
     pinMode(decoder1Pin, OUTPUT);
@@ -39,19 +39,29 @@ ClockState getState() {
   return state;
 }
 
-int* getSeconds(bool &lowDot, bool &upDot) {
-  static int seconds[lampsCount];
-  lowDot = second() % 2;
-  upDot = second() % 2;
+static int cachedSecond = 0;
+static unsigned long lastSecondUpdate = 0;
 
-  int number = second() % 10;
+int* IRAM_ATTR getSeconds(bool &lowDot, bool &upDot) {
+  static int seconds[lampsCount];
+  lowDot = cachedSecond % 2;
+  upDot = cachedSecond % 2;
+
+  int number = cachedSecond % 10;
   for (int i = 0; i < lampsCount; i++) {
     seconds[i] = number;
   }
   return seconds;
 }
 
-int* getDigitsToDisplay(bool &lowDot, bool &upDot) {
+void updateSecondsCache() {
+  if (millis() - lastSecondUpdate > 100) {
+    cachedSecond = second();
+    lastSecondUpdate = millis();
+  }
+}
+
+int* IRAM_ATTR getDigitsToDisplay(bool &lowDot, bool &upDot) {
   static ClockState transitionToState;
   static unsigned long lastTimeStateChanged = 0;
 
@@ -63,8 +73,8 @@ int* getDigitsToDisplay(bool &lowDot, bool &upDot) {
       lastTimeStateChanged = millis();
     }
     digitsToDisplay = getCachedTime();
-    lowDot = second() % 2;
-    upDot = second() % 2;
+    lowDot = cachedSecond % 2;
+    upDot = cachedSecond % 2;
     break;
   case transition: {
     static byte iteration = 0;
@@ -120,7 +130,7 @@ int* getDigitsToDisplay(bool &lowDot, bool &upDot) {
   return digitsToDisplay;
 } 
 
-int* getTransitionStep(int *from, int *to, byte iteration) {
+int* IRAM_ATTR getTransitionStep(int *from, int *to, byte iteration) {
   static int result[lampsCount];
   for (int i = 0; i < lampsCount; i++) {
     int curFrom = from[i];
@@ -134,7 +144,7 @@ int* getTransitionStep(int *from, int *to, byte iteration) {
   return result;
 }
 
- void doIndication(int *digits, bool lowDot, bool upDot) {
+ void IRAM_ATTR doIndication(int *digits, bool lowDot, bool upDot) {
   if ((micros() - lastTimeInterval1Started) < 3173)
     return ;
   lastTimeInterval1Started = micros();
@@ -215,7 +225,7 @@ void doEnumerationAndCorrectVoltage(int seconds) {
 	setAimVoltage((maxVoltage + minVoltage) / 2);
 }
 
-void setNumber(int digit) {
+void IRAM_ATTR setNumber(int digit) {
   #if VERSION == 1
   switch (digit) {
     case -1:

@@ -58,20 +58,23 @@ int* getDate() {
   return date;
 }
 
-int* getCachedTime() {
+int* IRAM_ATTR getCachedTime() {
+  return updatedTime;
+}
+
+int* IRAM_ATTR getCachedDate() {
+  return updatedDate;
+}
+
+void updateTimeCache() {
   if (millis() - lastTimeStringWasUpdated > 1000) {
     updatedTime = getTime();
     lastTimeStringWasUpdated = millis();
   }
-  return updatedTime;
-}
-
-int* getCachedDate() {
   if (millis() - lastDateStringWasUpdated > 15000) {
     updatedDate = getDate();
     lastDateStringWasUpdated = millis();
   }
-  return updatedDate;
 }
 
 time_t getLocalTime() {

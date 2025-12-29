@@ -11,6 +11,7 @@
 #define zero 0x00
 
 bool dateTimeIsValid = false;
+unsigned long lastTimeRTCSync = UINT32_MAX;
 byte decToBcd(byte val);
 byte bcdToDec(byte val);
 
@@ -18,12 +19,11 @@ void setupRTC() {
   Wire.begin(i2csDataPin, i2csClockPin);
 }
 
-boolean hasValidDateAndTime() {
+boolean IRAM_ATTR hasValidDateAndTime() {
   return dateTimeIsValid;
 }
 
 void syncRTCWithInternalTime() {
-  static unsigned long lastTimeRTCSync = UINT_MAX;
   if (millis() - lastTimeRTCSync < 10000) {
     return ;
   }
