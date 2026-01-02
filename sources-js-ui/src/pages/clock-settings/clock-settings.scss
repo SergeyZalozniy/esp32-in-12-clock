@@ -1,0 +1,67 @@
+@use "@styles/variables";
+@use "@components/file-upload/file-upload";
+@use "@components/timezone-selector/timezone-selector";
+
+.settings {
+  &-content {
+    @media (min-width: 768px) {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+  }
+
+  &-section {
+    background: var(--bg-darker);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 24px;
+    height: 100%;
+
+    &__title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-light);
+      margin: 0 0 16px 0;
+      //display: flex;
+      //align-items: center;
+      //gap: 8px;
+    }
+
+    &__icon {
+      width: 20px;
+      height: 20px;
+      filter: brightness(0) invert(1);
+    }
+
+    &__description {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin: 0 0 20px 0;
+      line-height: 1.5;
+    }
+  }
+
+  &-nested {
+    margin-top: 16px;
+    //display: flex;
+    //flex-direction: column;
+    //gap: 16px;
+    transition: all 0.3s ease;
+
+    &--hidden {
+      display: none;
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

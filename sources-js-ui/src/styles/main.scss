@@ -1,0 +1,17 @@
+@use "reset";
+@use "variables";
+@use "utilities";
+@use "@components/header/header";
+@use "pages";
+
+body {
+  background: var(--bg-dark);
+  color: var(--text-light);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  min-height: 100vh;
+}
+
+.main {
+  padding-top: var(--header-height);
+  min-height: 100vh;
+}

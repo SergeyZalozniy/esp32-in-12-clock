@@ -10,11 +10,18 @@ WebSocketsServer webSocket = WebSocketsServer(webSocketPort);
 
 enum SocketCommands {
   wifiPassword = 1,
-  wifiSSID,
-  autoTimeZone,
-  timezoneName,
-  enableGPS
+  wifiSSID = 2,
+  autoTimeZone = 3,
+  timezoneName = 4,
+  enableGPS = 5,
+  nightMode = 6,
+  brightness = 7,
+  timeMode = 8,
+  fileUpload = 9,
+  advancedMode = 10,
+  language = 11
 };
+
 
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length);
 void procceedSocketEvent(SocketCommands command, String value);
@@ -76,6 +83,14 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
 
 void procceedSocketEvent(SocketCommands command, String value) {
   switch (command) {
+  case SocketCommands::wifiPassword:
+    saveWifiPassword(value);
+    delay(200);
+    ESP.restart();  
+    break;
+  case SocketCommands::wifiSSID:
+    saveWifiSSID(value);
+    break;
   case SocketCommands::autoTimeZone: {
       boolean autoTimeZone = value.equalsIgnoreCase("true");
       saveAutoTimezone(autoTimeZone);

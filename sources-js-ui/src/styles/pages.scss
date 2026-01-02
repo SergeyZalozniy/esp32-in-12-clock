@@ -1,0 +1,34 @@
+@use "variables";
+
+.page {
+  display: none;
+  animation: fadeIn 0.3s ease;
+
+  &--active {
+    display: block;
+  }
+
+  &__container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px 16px;
+
+    @media (max-width: 768px) {
+      padding: 20px 16px;
+    }
+  }
+
+  &__title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-light);
+    margin: 0 0 24px 0;
+
+    @media (max-width: 768px) {
+      font-size: 20px;
+      margin-bottom: 20px;
+    }
+  }
+}
+
+

@@ -1,0 +1,142 @@
+@use "@styles/variables" as *;
+
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--header-height);
+  background: var(--bg-darker);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: var(--shadow);
+  z-index: 100;
+
+  &__container {
+    max-width: 1200px;
+    margin: 0 auto;
+    height: 100%;
+    padding: 0 16px;
+
+    @include mobile {
+      padding: 0 12px;
+      gap: 12px;
+    }
+
+    @include respond-to($breakpoint-xs) {
+      padding: 0 8px;
+      gap: 8px;
+    }
+  }
+
+  &__logo {
+    @include mobile {
+      gap: 8px;
+    }
+  }
+
+  &__icon {
+    filter: brightness(0) invert(1);
+
+    [data-theme="light"] & {
+      filter: brightness(0) invert(0);
+    }
+
+    @include mobile {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  &__title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-light);
+    margin: 0;
+    white-space: nowrap;
+
+    @include mobile {
+      font-size: 14px;
+    }
+  }
+
+  &__right {
+    @include respond-to($breakpoint-md - 1px) {
+      gap: 12px;
+    }
+
+    @include mobile {
+      gap: 8px;
+    }
+  }
+
+  &__nav {
+    @include mobile {
+      gap: 6px;
+    }
+  }
+
+  &__controls {
+    @include mobile {
+      gap: 6px;
+    }
+  }
+}
+
+.nav-tab {
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+
+  &__icon {
+    filter: brightness(0) invert(1);
+
+    [data-theme="light"] & {
+      filter: brightness(0) invert(0);
+    }
+  }
+
+  &__text {
+    @include respond-to($breakpoint-xs) {
+      display: none;
+    }
+  }
+
+  &:hover {
+    background: rgba(255, 107, 53, 0.1);
+    border-color: var(--primary-color);
+    color: var(--text-light);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &--active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--text-light);
+
+    &:hover {
+      background: var(--primary-dark);
+      border-color: var(--primary-dark);
+    }
+  }
+
+  @include mobile {
+    padding: 8px 12px;
+    min-width: 40px;
+  }
+
+  @include respond-to($breakpoint-xs) {
+    padding: 8px 10px;
+    min-width: 40px;
+    justify-content: center;
+  }
+}

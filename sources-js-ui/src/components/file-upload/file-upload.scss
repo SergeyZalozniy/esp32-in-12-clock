@@ -1,0 +1,128 @@
+@use "@styles/variables";
+
+.file-upload {
+  &__area {
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    padding: 32px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: rgba(255, 255, 255, 0.02);
+
+    &:hover {
+      border-color: var(--primary-color);
+      background: rgba(255, 107, 53, 0.05);
+    }
+
+    &--dragover {
+      border-color: var(--primary-color);
+      background: rgba(255, 107, 53, 0.1);
+    }
+  }
+
+  &__icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 16px;
+    opacity: 0.6;
+    filter: brightness(0) invert(1);
+  }
+
+  &__text {
+    font-size: 16px;
+    color: var(--text-light);
+    margin: 0 0 8px 0;
+  }
+
+  &__hint {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin: 0;
+  }
+
+  &__input {
+    display: none;
+  }
+
+  &__selected {
+    margin-top: 16px;
+    padding: 12px 16px;
+    background: rgba(255, 107, 53, 0.1);
+    border: 1px solid var(--primary-color);
+    border-radius: 8px;
+  }
+
+  &__file {
+    &-info {
+      min-width: 0;
+    }
+
+    &-icon {
+      width: 24px;
+      height: 24px;
+      filter: brightness(0) invert(1);
+    }
+
+    &-name {
+      font-size: 14px;
+      color: var(--text-light);
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    &-size {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+  }
+
+  &__remove {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: var(--primary-color);
+    }
+
+    img {
+      width: 20px;
+      height: 20px;
+      filter: brightness(0) invert(1);
+    }
+  }
+
+  &__button {
+    margin-top: 16px;
+    width: 100%;
+    padding: 12px 24px;
+    background: var(--primary-color);
+    border: none;
+    border-radius: 8px;
+    color: var(--text-light);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: var(--primary-dark);
+    }
+
+    &:active {
+      transform: scale(0.98);
+    }
+
+    &:disabled {
+      background: var(--border-color);
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+  }
+}

@@ -1,0 +1,231 @@
+@use "@styles/variables" as *;
+
+.night-mode {
+  &__time-range {
+    margin-top: 16px;
+    opacity: 0.4;
+    pointer-events: none;
+    transition: all 0.3s ease;
+
+    @include mobile {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+    }
+
+    &--active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+
+  &__time-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  &__time-input {
+    padding: 10px 12px;
+    background: var(--bg-darker);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-light);
+    font-size: 14px;
+    font-family: inherit;
+    transition: all 0.2s ease;
+    cursor: pointer;
+
+    &::-webkit-calendar-picker-indicator {
+      filter: invert(1);
+      cursor: pointer;
+    }
+
+    &:hover:not(:disabled) {
+      border-color: var(--primary-color);
+    }
+
+    &:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    @include mobile {
+      padding: 12px;
+      font-size: 16px;
+    }
+  }
+
+  &__time-separator {
+    font-size: 18px;
+    color: var(--text-muted);
+    padding-bottom: 10px;
+
+    @include mobile {
+      display: none;
+    }
+  }
+
+  &__brightness-control {
+    margin-top: 16px;
+    opacity: 0.4;
+    pointer-events: none;
+    transition: all 0.3s ease;
+
+    &--active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+
+  &__brightness-header {
+    margin-bottom: 12px;
+  }
+
+  &__brightness-label {
+    font-size: 14px;
+    color: var(--text-light);
+    font-weight: 500;
+  }
+
+  &__brightness-value {
+    font-size: 14px;
+    color: var(--primary-color);
+    font-weight: 600;
+  }
+
+  &__brightness-slider {
+    position: relative;
+    height: 40px;
+  }
+
+  &__brightness-track {
+    position: absolute;
+    width: 100%;
+    height: 6px;
+    background: var(--border-color);
+    border-radius: 3px;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  &__brightness-fill {
+    height: 100%;
+    background: var(--primary-color);
+    transition: width 0.1s ease;
+    border-radius: 3px;
+  }
+
+  &__brightness-input {
+    position: relative;
+    width: 100%;
+    height: 40px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+    z-index: 1;
+
+    &::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      background: var(--primary-color);
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+
+      &:hover {
+        transform: scale(1.1);
+        box-shadow: 0 2px 8px rgba(255, 107, 53, 0.4);
+      }
+
+      &:active {
+        transform: scale(1.05);
+      }
+    }
+
+    &::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      background: var(--primary-color);
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+
+      &:hover {
+        transform: scale(1.1);
+        box-shadow: 0 2px 8px rgba(255, 107, 53, 0.4);
+      }
+
+      &:active {
+        transform: scale(1.05);
+      }
+    }
+
+    &:focus {
+      outline: none;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+
+      &::-webkit-slider-thumb {
+        cursor: not-allowed;
+        opacity: 0.5;
+
+        &:hover {
+          transform: none;
+        }
+      }
+
+      &::-moz-range-thumb {
+        cursor: not-allowed;
+        opacity: 0.5;
+
+        &:hover {
+          transform: none;
+        }
+      }
+    }
+  }
+
+  &__backlight-control {
+    margin-top: 16px;
+    padding: 16px 16px 16px 0;
+    background: var(--bg-darker);
+    border-radius: 12px;
+    opacity: 0.4;
+    pointer-events: none;
+    transition: all 0.3s ease;
+
+    &--active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+
+  &__backlight-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-light);
+    margin: 0 0 4px 0;
+  }
+
+  &__backlight-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 0;
+    line-height: 1.4;
+  }
+}

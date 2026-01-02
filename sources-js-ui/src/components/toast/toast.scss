@@ -1,0 +1,120 @@
+@use "@styles/variables" as *;
+
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  min-width: 300px;
+  max-width: 500px;
+  padding: 16px 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  z-index: 10000;
+  animation: slideIn 0.3s ease-out;
+
+  @include mobile {
+    left: 20px;
+    right: 20px;
+    min-width: auto;
+  }
+
+  &--error {
+    border-left: 4px solid #ef4444;
+  }
+
+  &--success {
+    border-left: 4px solid #10b981;
+  }
+
+  &--warning {
+    border-left: 4px solid #f59e0b;
+  }
+
+  &__icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    font-size: 16px;
+    font-weight: bold;
+  }
+
+  &--error &__icon {
+    background: #fee2e2;
+    color: #ef4444;
+  }
+
+  &--success &__icon {
+    background: #d1fae5;
+    color: #10b981;
+  }
+
+  &--warning &__icon {
+    background: #fef3c7;
+    color: #f59e0b;
+  }
+
+  &__content {
+    min-width: 0;
+  }
+
+  &__title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0 0 4px 0;
+  }
+
+  &__message {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0;
+    word-wrap: break-word;
+    white-space: pre-line;
+  }
+
+  &__close {
+    background: none;
+    border: none;
+    padding: 4px;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    color: #6b7280;
+    transition: all 0.2s ease;
+    font-size: 20px;
+    line-height: 1;
+    border-radius: 4px;
+
+    &:hover {
+      color: #1f2937;
+      background: #f3f4f6;
+    }
+  }
+
+  &--hiding {
+    animation: slideOut 0.3s ease-out forwards;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}

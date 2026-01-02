@@ -1,0 +1,13 @@
+export enum WebSocketCommand {
+  WIFI_PASSWORD = 1,
+  WIFI_SSID = 2,
+  TIMEZONE_AUTO = 3,
+  TIMEZONE_SELECTED = 4,
+  GPS_ENABLED = 5,
+  NIGHT_MODE = 6,
+  BRIGHTNESS = 7,
+  TIME_MODE = 8,
+  FILE_UPLOAD = 9,
+  ADVANCED_MODE = 10,
+  LANGUAGE = 11
+}

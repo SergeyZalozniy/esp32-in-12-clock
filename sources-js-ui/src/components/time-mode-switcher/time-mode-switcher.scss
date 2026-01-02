@@ -1,0 +1,47 @@
+@use "@styles/variables" as *;
+
+.time-mode-switcher {
+  &__toggle {
+    background: var(--bg-darker);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 4px;
+  }
+
+  &__toggle-btn {
+    padding: 10px 24px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 60px;
+
+    @include mobile {
+      padding: 8px 20px;
+      font-size: 13px;
+      min-width: 50px;
+    }
+
+    &:hover {
+      color: var(--text-light);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    &--active {
+      background: var(--primary-color);
+      color: var(--text-light);
+
+      &:hover {
+        background: var(--primary-dark);
+      }
+    }
+
+    &:active {
+      transform: scale(0.98);
+    }
+  }
+}

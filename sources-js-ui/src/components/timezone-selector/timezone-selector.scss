@@ -1,0 +1,130 @@
+@use "@styles/variables";
+
+.timezone-selector {
+  &__toggle {
+    margin-bottom: 20px;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 4px;
+    border-radius: 8px;
+  }
+
+  &__toggle-btn {
+    padding: 10px 16px;
+    background: transparent;
+    border-radius: 6px;
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      color: var(--text-light);
+    }
+
+    &--active {
+      background: var(--primary-color);
+      color: var(--text-light);
+    }
+  }
+
+  &__manual {
+    display: none;
+
+    &--active {
+      display: block;
+    }
+  }
+
+  &__auto {
+    display: none;
+
+    &--active {
+      display: block;
+    }
+  }
+
+  &__auto-info {
+    padding: 16px;
+    background: rgba(255, 107, 53, 0.1);
+    border: 1px solid var(--primary-color);
+    border-radius: 8px;
+  }
+
+  &__auto-icon {
+    width: 20px;
+    height: 20px;
+    margin-top: 2px;
+    filter: brightness(0) invert(1);
+  }
+
+  &__auto-text {
+    p {
+      margin: 0 0 8px 0;
+      font-size: 14px;
+      color: var(--text-light);
+      line-height: 1.5;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+
+    strong {
+      color: var(--primary-color);
+    }
+  }
+
+  &__label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-light);
+    margin-bottom: 8px;
+  }
+
+  &__custom-select {
+    position: relative;
+    width: 100%;
+  }
+
+  &__select-trigger {
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--bg-dark);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-light);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+
+    &:hover {
+      border-color: var(--primary-color);
+    }
+
+    &--active {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+    }
+  }
+
+  &__select-text {
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__select-arrow {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.2s ease;
+    filter: brightness(0) invert(1);
+
+    &--rotated {
+      transform: rotate(180deg);
+    }
+  }
+}

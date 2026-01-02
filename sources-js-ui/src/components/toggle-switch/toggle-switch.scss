@@ -1,0 +1,57 @@
+@use "@styles/variables" as *;
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 52px;
+  height: 28px;
+
+  &__checkbox {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+  }
+
+  &__toggle {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--border-color);
+    transition: all 0.3s ease;
+    border-radius: 28px;
+
+    &::before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: all 0.3s ease;
+      border-radius: 50%;
+    }
+
+    &--active {
+      background-color: var(--primary-color);
+
+      &::before {
+        transform: translateX(24px);
+      }
+    }
+
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+}
+
+.settings-section__header {
+  @include mobile {
+    gap: 12px;
+  }
+}
