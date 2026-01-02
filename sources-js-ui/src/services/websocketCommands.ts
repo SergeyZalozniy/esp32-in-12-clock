@@ -9,5 +9,7 @@ export enum WebSocketCommand {
   TIME_MODE = 8,
   FILE_UPLOAD = 9,
   ADVANCED_MODE = 10,
-  LANGUAGE = 11
+  LANGUAGE = 11,
+  WIFI_LIST = 12,
+  REQUEST_WIFI_LIST = 13
 }

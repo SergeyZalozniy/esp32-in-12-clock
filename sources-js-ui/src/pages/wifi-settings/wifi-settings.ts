@@ -14,10 +14,7 @@ const initWiFiSettings = () => {
 
   if (!container) return;
 
-  const networksString =
-    'HomeNetwork_5G | OfficeWiFi_Guest | CafeConnect_Free | MyRouter_2.4GHz | Apartment_WiFi_24';
-
-  const mockedNetworks = networksString.split('|').map((network) => network.trim());
+  let mockedNetworks: string[] = [];
 
   const state: WiFiState = {
     selectedNetwork: null,
@@ -148,6 +145,62 @@ const initWiFiSettings = () => {
     `;
 
     attachWiFiSectionListeners();
+  };
+
+  const updateNetworkDropdown = () => {
+    const dropdown = wifiSettingsContainer.querySelector(
+      '[data-networks-dropdown]'
+    ) as HTMLDivElement;
+
+    if (!dropdown) return;
+
+    // Get current network items
+    const existingItems = Array.from(dropdown.querySelectorAll('[data-network-item]'));
+    const existingNetworks = existingItems.map(item => item.getAttribute('data-network-item') || '');
+
+    // Check if networks have changed
+    const networksChanged =
+      mockedNetworks.length !== existingNetworks.length ||
+      mockedNetworks.some((network, index) => network !== existingNetworks[index]);
+
+    if (!networksChanged) {
+      return; // No changes, skip update
+    }
+
+    // Clear and rebuild dropdown
+    dropdown.innerHTML = mockedNetworks
+      .map(
+        (network) => `
+        <div class="dropdown-list__item" data-network-item="${network}">
+          <img src="${wifiIcon}" alt="WiFi" width="16" height="16">
+          <span>${network}</span>
+        </div>
+      `
+      )
+      .join('');
+
+    // Re-attach click listeners to new network items
+    const networkItems = dropdown.querySelectorAll('[data-network-item]') as NodeListOf<HTMLElement>;
+    networkItems.forEach((item) => {
+      item.addEventListener('click', () => {
+        const value = item.dataset.networkItem || '';
+        state.selectedNetwork = value;
+        state.isManualEntry = false;
+
+        const networkInput = wifiSettingsContainer.querySelector(
+          '[data-network-input]'
+        ) as HTMLInputElement;
+
+        if (networkInput) {
+          networkInput.value = value;
+        }
+
+        dropdown.classList.remove('dropdown-list--open');
+        state.isDropdownOpen = false;
+
+        renderConnectSection();
+      });
+    });
   };
 
   const attachWiFiSectionListeners = () => {
@@ -394,6 +447,32 @@ const initWiFiSettings = () => {
   window.addEventListener('languageChanged', () => {
     renderWiFiSection();
     renderConnectSection();
+  });
+
+  // Listen for WiFi list response from ESP32
+  websocketService.onMessage(WebSocketCommand.WIFI_LIST, (data: string) => {
+    if (data && data !== 'No networks found') {
+      mockedNetworks = data.split('|').map((network) => network.trim());
+      updateNetworkDropdown(); // Partial update - no blink
+    }
+  });
+
+  // Request WiFi list every 10 seconds
+  const requestWiFiList = () => {
+    websocketService.send(WebSocketCommand.REQUEST_WIFI_LIST, '');
+  };
+
+  // Request WiFi list when WebSocket connects
+  websocketService.onConnect(() => {
+    requestWiFiList();
+  });
+
+  // Set up interval for subsequent requests
+  const wifiListInterval = setInterval(requestWiFiList, 10000);
+
+  // Clean up interval when page is destroyed
+  window.addEventListener('beforeunload', () => {
+    clearInterval(wifiListInterval);
   });
 };
 

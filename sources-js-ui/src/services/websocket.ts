@@ -1,8 +1,10 @@
 type MessageHandler = (data: string) => void;
+type ConnectHandler = () => void;
 
 class WebSocketService {
   private ws: WebSocket | null = null;
   private messageHandlers: Map<number, MessageHandler> = new Map();
+  private connectHandlers: ConnectHandler[] = [];
   private reconnectTimer: number | null = null;
   private reconnectDelay = 3000;
   private url: string;
@@ -25,6 +27,8 @@ class WebSocketService {
           clearTimeout(this.reconnectTimer);
           this.reconnectTimer = null;
         }
+        // Call all registered connect handlers
+        this.connectHandlers.forEach((handler) => handler());
       };
 
       this.ws.onclose = () => {
@@ -74,6 +78,10 @@ class WebSocketService {
 
   onMessage(command: number, handler: MessageHandler): void {
     this.messageHandlers.set(command, handler);
+  }
+
+  onConnect(handler: ConnectHandler): void {
+    this.connectHandlers.push(handler);
   }
 
   send(command: number, data: string): void {
