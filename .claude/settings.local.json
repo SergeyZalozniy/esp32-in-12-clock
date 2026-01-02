@@ -3,7 +3,13 @@
     "allow": [
       "Bash(pio run)",
       "Bash(platformio run:*)",
-      "Bash(~/.platformio/penv/bin/pio run:*)"
+      "Bash(~/.platformio/penv/bin/pio run:*)",
+      "Bash(npm install)",
+      "Bash(npm run build:*)",
+      "Bash(du -h:*)",
+      "Bash(cat:*)",
+      "Bash(ls:*)",
+      "Bash(pio run:*)"
     ]
   }
 }

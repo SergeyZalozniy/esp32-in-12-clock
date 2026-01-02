@@ -15,7 +15,9 @@ boolean gpsEnabled = true;
 TinyGPSPlus gps;
 
 void setupGPS() {
-    gpsSerial.begin(9600);
+    // ESP32 Core 3.x: Explicitly set UART2 pins to avoid GPIO 4 conflict with decoder2Pin
+    // Use GPIO 16 (RX) and GPIO 17 (TX) for GPS
+    gpsSerial.begin(9600, SERIAL_8N1, 16, 17);  // RX=16, TX=17
     gpsEnabled = readGPSEnable();
 }
 

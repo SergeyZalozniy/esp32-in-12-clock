@@ -8,9 +8,9 @@ unsigned long lastTimeCheckLightSensor = 0;
 unsigned long lastTimeUpdateVoltage = 0;
 
 void setupBrightness() {
-  ledcSetup(pwmChannel, freq, resolution);
-  ledcAttachPin(pwmPin, pwmChannel);
-  ledcWrite(pwmChannel, defaultDuty);
+  // ESP32 Arduino Core 3.x API
+  ledcAttach(pwmPin, freq, resolution);
+  ledcWrite(pwmPin, defaultDuty);
 
   pinMode(voltPin, INPUT);
   pinMode(lighSensor1Pin, INPUT);
@@ -30,15 +30,15 @@ void forceCorrectVoltage() {
 
   dutyCycle = max(dutyCycle, 55);
   dutyCycle = min(dutyCycle, 240);
-  ledcWrite(pwmChannel, dutyCycle);
+  ledcWrite(pwmPin, dutyCycle);
 }
 
 void turnOffPWM() {
-  ledcWrite(pwmChannel, 255);
+  ledcWrite(pwmPin, 255);
 }
 
 void turnOnPWM() {
-  ledcWrite(pwmChannel, dutyCycle);
+  ledcWrite(pwmPin, dutyCycle);
 }
 
 void correctVoltage() {

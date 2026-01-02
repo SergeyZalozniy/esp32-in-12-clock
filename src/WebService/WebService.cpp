@@ -1,3 +1,4 @@
+#include <WiFi.h>
 #include <ESPmDNS.h>
 #include <DNSServer.h>
 #include <FS.h>
@@ -20,7 +21,13 @@ bool handleFileRead(String path);
 
 void setupWebServer() {
     server.enableDelay(false);
-    SPIFFS.begin();
+
+    // Initialize SPIFFS with format on fail option
+    if (!SPIFFS.begin(true)) {
+        // Try to format and mount again
+        !SPIFFS.begin(false);
+    }
+
     if (MDNS.begin("nixie")) {
         // Serial.println(F("MDNS responder started"));
         if (MDNS.addService("_http", "_tcp", 80)) {
@@ -59,14 +66,14 @@ public:
         return false;
     }
     return (uri != "/ssid") && 
-    (uri != "/index.htm") &&
+    (uri != "/index.html") &&
     (uri != "/update");
   }
 
   bool handle(WebServer& server, HTTPMethod requestMethod, String requestUri) {
     // Serial.println(requestUri);
 
-    return handleFileRead("/settings.htm");
+    return handleFileRead("/index.html");
   }
 };
 
@@ -129,7 +136,7 @@ String getContentType(String filename) {
 bool handleFileRead(String path) {
     turnOffIndication();
     if (path.endsWith("/"))
-        path += "index.htm";
+        path += "index.html";
     String contentType = getContentType(path);
     String pathWithGz = path + ".gz";
     if (SPIFFS.exists(pathWithGz) || SPIFFS.exists(path)) {
@@ -193,33 +200,57 @@ void handleFileCreate() {
 }
 
 void handleFileList() {
-    if (!server.hasArg("dir")) {
-        server.send(500, "text/plain", "BAD ARGS");
+    // Get path prefix filter (default to root)
+    String pathFilter = "";
+    if (server.hasArg("dir")) {
+        pathFilter = server.arg("dir");
+        // Remove leading slash for filtering
+        if (pathFilter.startsWith("/")) {
+            pathFilter = pathFilter.substring(1);
+        }
+        if (pathFilter.length() > 0 && !pathFilter.endsWith("/")) {
+            pathFilter += "/";
+        }
+    }
+
+    String output = "[";
+
+    // Iterate through all files in SPIFFS
+    File root = SPIFFS.open("/", "r");
+    if (!root || !root.isDirectory()) {
+        server.send(500, "text/plain", "Failed to open filesystem");
         return;
     }
 
-    String path = server.arg("dir");
-    File dir = SPIFFS.open(path);
-    path = String();
+    File file = root.openNextFile();
+    while (file) {
+        String filename = String(file.name());
 
-    File entry = dir.openNextFile();
-    String output = "[";
-    while (entry) {
-        if (output != "[")
-            output += ',';
-        bool isDir = false;
-        output += "{\"type\":\"";
-        output += (isDir) ? "dir" : "file";
-        output += "\",\"name\":\"";
-        output += String(entry.name()).substring(1);
-        output += "\"}";
-        entry.close();
+        // Remove leading slash from filename for comparison
+        if (filename.startsWith("/")) {
+            filename = filename.substring(1);
+        }
 
-        entry = dir.openNextFile();
+        // Filter files by path prefix
+        if (pathFilter.length() == 0 || filename.startsWith(pathFilter)) {
+            if (output != "[") {
+                output += ',';
+            }
+
+            output += "{\"type\":\"file\",\"name\":\"";
+            output += filename;
+            output += "\",\"size\":";
+            output += String(file.size());
+            output += "}";
+        }
+
+        file.close();
+        file = root.openNextFile();
     }
+    root.close();
 
     output += "]";
-    server.send(200, "text/json", output);
+    server.send(200, "application/json", output);
 }
 
 void handleNotFound() {
@@ -255,13 +286,13 @@ void HTTP_init() {
     }
     server.on("/", HTTP_GET, []()
               {
-                  if (!handleFileRead("/settings.htm"))
+                  if (!handleFileRead("/index.html"))
                       server.send(404, "text/plain", "FileNotFound");
               }); //list directory
 
-    server.on("/index.htm", HTTP_GET, []()
+    server.on("/index.html", HTTP_GET, []()
               {
-                  if (!handleFileRead("/index.htm"))
+                  if (!handleFileRead("/index.html"))
                       server.send(404, "text/plain", "FileNotFound");
               }); //list directory
 
@@ -278,12 +309,6 @@ void HTTP_init() {
               });
 
     server.on("/list", HTTP_GET, handleFileList);
-
-    server.onNotFound([]()
-                      {
-                          if (!handleFileRead("/settings.htm"))
-                              server.send(404, "text/plain", "FileNotFound");
-                      });
 
     server.on("/ssid", HTTP_GET, []()
               {
@@ -335,10 +360,22 @@ void HTTP_init() {
         server.send(200, "text/plain", ""); 
         }, handleFileUpload);
 
-    server.onNotFound(handleNotFound);
-    server.serveStatic("/font", SPIFFS, "/font", "max-age=86400");
-    server.serveStatic("/js", SPIFFS, "/js", "max-age=86400");
-    server.serveStatic("/css", SPIFFS, "/css", "max-age=86400");
+    // Captive portal: serve index.html for unknown requests in AP mode
+    server.onNotFound([]() {
+        if (WiFi.status() != WL_CONNECTED) {
+            // In AP mode, serve index.html for captive portal
+            if (!handleFileRead("/index.html")) {
+                server.send(404, "text/plain", "FileNotFound");
+            }
+        } else {
+            // In station mode, show proper 404 error
+            handleNotFound();
+        }
+    });
+
+    // Vite-built assets
+    server.serveStatic("/assets", SPIFFS, "/assets", "max-age=86400");
+    server.serveStatic("/clock.svg", SPIFFS, "/clock.svg", "max-age=86400");
     server.serveStatic("/favicon.ico", SPIFFS, "/favicon.ico", "max-age=86400");
 
     server.on("/all", HTTP_GET, []() {
