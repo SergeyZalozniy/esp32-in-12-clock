@@ -8,54 +8,82 @@
 #include "Helpers/EEPROMHelper.h"
 #include "Helpers/Constants.h"
 
-bool StartAPMode() {
-	IPAddress apIP(192, 168, 4, 1);
+boolean initialWifiStateChecked = false;
+boolean wifiConnectedOnStart = false;
+boolean apModeStarted = false;
+unsigned long lastTimeWifiUpdated = 0;
+unsigned long disconnectTime = 0;
+unsigned long reconnectTime = 0;
+
+bool startAPMode();
+bool hasSavedWifiCredentials();
+void tryConnectToWifi();
+
+void handleWifiLoop() {
+  if (millis() - lastTimeWifiUpdated < 1000) {
+	return ;
+  }
+
+  if (millis() >= 10000 && !initialWifiStateChecked) {
+	initialWifiStateChecked = true;
+	wifiConnectedOnStart = WiFi.status() == WL_CONNECTED;
+	if (!wifiConnectedOnStart && !apModeStarted) {
+		startAPMode();
+	} else {
+		WiFi.setAutoReconnect(true);
+	}
+  }
+
+  if (!initialWifiStateChecked) {
+	return ;
+  }
+
+  boolean currentlyConnected = WiFi.status() == WL_CONNECTED;
+
+  if (!currentlyConnected) {
+	unsigned long lastReconnectAttempt = millis() - reconnectTime;
+	if (lastReconnectAttempt > 15 * 60 * 1000 && hasSavedWifiCredentials()) { // every 15 minutes
+		tryConnectToWifi();
+		reconnectTime = millis();
+	} else if (lastReconnectAttempt > 15 * 1000 && !apModeStarted) { // wait 15 sec before starting AP mode
+		startAPMode();
+	}
+  }
+
+  lastTimeWifiUpdated = millis();
+}
+
+bool startAPMode() {
+	if (apModeStarted) {
+		return true;
+	}
+	Serial.println(F("Starting AP mode"));
+
 	WiFi.disconnect();
 	WiFi.mode(WIFI_AP);
+	IPAddress apIP(192, 168, 4, 1);
 
 	WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
 	WiFi.softAP(wifiName.c_str());
+	apModeStarted = true;
 	return true;
 }
 
-void setupWifi() {
+bool hasSavedWifiCredentials() {
+	String ssid = readWifiSSID();
+	return ssid != "";
+}
+
+void tryConnectToWifi() {
+	apModeStarted = false;
 	WiFi.mode(WIFI_STA);
 	WiFi.setSleep(false);
-	String ssid = readWifiSSID();
-	String password = readWifiPassword();
-	boolean hasSSID = ssid != "";
-	if (!hasSSID) {
-		WiFi.begin();
-	} else {
+
+	if (hasSavedWifiCredentials()) {
+		String ssid = readWifiSSID();
+		String password = readWifiPassword();
 		WiFi.begin(ssid.c_str(), password.c_str());
-	}
-
-	long startTime = millis();
-	long millisElapse = 0;
-	bool lowDot = false, upDot = false;
-	while (WiFi.status() != WL_CONNECTED && millisElapse < 10000) {
-		millisElapse = millis() - startTime;
-		// updateLedColor();
-		doEnumerationAndCorrectVoltage(1);
-		// int *digits;
-		// if (hasValidDateAndTime()) {
-		// 	digits = getDigitsToDisplay(lowDot, upDot);
-		// } else {
-		// 	digits = getSeconds(lowDot, upDot);
-		// }
-		// doIndication(digits, lowDot, upDot);
-		// correctVoltage();
-	}
-
-	if (WiFi.status() != WL_CONNECTED) {
-		// Serial.println(F("WiFi up AP"));
-		StartAPMode();
-		IPAddress myIP = WiFi.softAPIP();
-		// Serial.print(F("AP IP address: "));
-		// Serial.println(myIP);
 	} else {
-		// Serial.println(F("WiFi connected"));
-		// Serial.println(F("IP address: "));
-		// Serial.println(WiFi.localIP());
+		startAPMode();
 	}
 }

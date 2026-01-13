@@ -398,12 +398,23 @@ export const initNightMode = (containerElement: HTMLElement): void => {
       startTime = parsed.startTime;
       endTime = parsed.endTime;
       brightness = parsed.brightness;
+      disableBacklight = parsed.disableBacklight;
 
       if (startInput) startInput.value = startTime;
       if (endInput) endInput.value = endTime;
       if (brightnessInput) brightnessInput.value = String(brightness);
       if (brightnessValue) brightnessValue.textContent = `${brightness}%`;
       if (brightnessFill) brightnessFill.style.width = `${brightness}%`;
+
+      // Update backlight toggle state
+      if (backlightCheckbox) backlightCheckbox.checked = disableBacklight;
+      if (backlightToggle) {
+        if (disableBacklight) {
+          backlightToggle.classList.add('toggle-switch__toggle--active');
+        } else {
+          backlightToggle.classList.remove('toggle-switch__toggle--active');
+        }
+      }
 
       updateToggleState();
       updateTimeInputsState();

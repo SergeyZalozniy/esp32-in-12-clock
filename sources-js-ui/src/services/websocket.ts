@@ -9,7 +9,7 @@ class WebSocketService {
   private reconnectDelay = 3000;
   private url: string;
 
-  constructor(url: string = 'ws://nixie.local:81/') {
+  constructor(url: string = 'ws://justtime.local:81/') {
     this.url = url;
   }
 
@@ -27,8 +27,10 @@ class WebSocketService {
           clearTimeout(this.reconnectTimer);
           this.reconnectTimer = null;
         }
-        // Call all registered connect handlers
-        this.connectHandlers.forEach((handler) => handler());
+        // Call all registered connect handlers with a small delay to ensure connection is fully ready
+        setTimeout(() => {
+          this.connectHandlers.forEach((handler) => handler());
+        }, 50);
       };
 
       this.ws.onclose = () => {
@@ -94,28 +96,33 @@ class WebSocketService {
     }
   }
 
-  sendFile(command: number, metadata: string, fileData: ArrayBuffer): void {
+  sendFile(updateType: number, fileData: ArrayBuffer): void {
     if (this.ws?.readyState === WebSocket.OPEN) {
-      const commandByte = new Uint8Array([command]);
-      const metadataBytes = new TextEncoder().encode(metadata);
-      const separator = new Uint8Array([0]);
+      // Binary upload format for ESP32:
+      // Byte 0: update type (0 = firmware.bin, 1 = spiffs.bin)
+      // Bytes 1-4: total file size (uint32_t, little-endian)
+      // Bytes 5+: file data
 
-      const totalLength =
-        commandByte.length + metadataBytes.length + separator.length + fileData.byteLength;
-      const combined = new Uint8Array(totalLength);
+      const fileSize = fileData.byteLength;
+      const header = new Uint8Array(5);
 
-      let offset = 0;
-      combined.set(commandByte, offset);
-      offset += commandByte.length;
-      combined.set(metadataBytes, offset);
-      offset += metadataBytes.length;
-      combined.set(separator, offset);
-      offset += separator.length;
-      combined.set(new Uint8Array(fileData), offset);
+      // Byte 0: update type
+      header[0] = updateType;
+
+      // Bytes 1-4: file size in little-endian format
+      header[1] = fileSize & 0xFF;
+      header[2] = (fileSize >> 8) & 0xFF;
+      header[3] = (fileSize >> 16) & 0xFF;
+      header[4] = (fileSize >> 24) & 0xFF;
+
+      // Combine header and file data
+      const combined = new Uint8Array(5 + fileSize);
+      combined.set(header, 0);
+      combined.set(new Uint8Array(fileData), 5);
 
       this.ws.send(combined.buffer);
       console.log(
-        `WebSocket sent file - Command: ${command}, Metadata: ${metadata}, Size: ${fileData.byteLength} bytes`
+        `WebSocket sent file - Type: ${updateType === 0 ? 'firmware' : 'spiffs'}, Size: ${fileSize} bytes`
       );
     } else {
       console.warn('WebSocket is not connected. File not sent.');

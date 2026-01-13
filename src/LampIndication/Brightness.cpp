@@ -1,14 +1,19 @@
 #include <Arduino.h>
 
 #include "../Helpers/Constants.h"
+#include "../Helpers/EEPROMHelper.h"
 
 int dutyCycle = 192;
 int aimVoltage = (maxVoltage + minVoltage) / 2;
 unsigned long lastTimeCheckLightSensor = 0;
 unsigned long lastTimeUpdateVoltage = 0;
 
+void setBrightnessPercent(int percent);
+
 void setupBrightness() {
   // ESP32 Arduino Core 3.x API
+  setBrightnessPercent(readBrightness());
+
   ledcAttach(pwmPin, freq, resolution);
   ledcWrite(pwmPin, defaultDuty);
 
@@ -19,6 +24,12 @@ void setupBrightness() {
 
 void setAimVoltage(int voltage) {
   aimVoltage = voltage;
+}
+
+void setBrightnessPercent(int percent) {
+  percent = constrain(percent, 0, 100);
+  int voltage = map(percent, 0, 100, minVoltage, maxVoltage);
+  setAimVoltage(voltage);
 }
 
 void forceCorrectVoltage() {
@@ -48,24 +59,4 @@ void correctVoltage() {
 
   lastTimeUpdateVoltage = millis();
   forceCorrectVoltage();
-}
-
-void updateDesireVoltageWithLightSensor() {
-  if (!hasLightSensor) {
-    return ;
-  }
-
-  if (millis() - lastTimeCheckLightSensor < 10000 && lastTimeCheckLightSensor != 0) {
-    return ;
-  }
-
-  lastTimeCheckLightSensor = millis();
-
-  int light = max(analogRead(lighSensor1Pin), analogRead(lighSensor2Pin));
-  int desireVolt = map(light, 500, 2400, minVoltage, maxVoltage);
-  
-  desireVolt = max(desireVolt, minVoltage);
-  desireVolt = min(desireVolt, maxVoltage);
-
-  setAimVoltage(desireVolt);
 }

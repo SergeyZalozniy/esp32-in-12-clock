@@ -10,7 +10,7 @@
 
 #define gpsSerial Serial2
 unsigned long lastTimeGPSSync = 0;
-// unsigned long lastEnableGPSSettingSync = 0;
+unsigned long lastEnableGPSSettingSync = 0;
 boolean gpsEnabled = true;
 TinyGPSPlus gps;
 
@@ -22,15 +22,19 @@ void setupGPS() {
 }
 
 void syncGPSTimeWithRTC() {
-    // We change value in method - userDidUpdateGPSEnable. There is no other option to change this setting
-    // if ((millis() - lastEnableGPSSettingSync) < (10 * 60000)) {
-    //     gpsEnabled = readGPSEnable();
-    // }
+    if (!gpsEnabled) {
+        return ;
+    }
+
+    if (millis() - lastEnableGPSSettingSync > 10 * 60 * 1000) {
+        return ;
+    }
 
     byte hours, minutes, seconds, day, month, year, dayOfWeek = 0;
     if (getDataGps(hours, minutes, seconds, day, month, year)) {
         setRTCDateTime(hours, minutes, seconds, day, month, year, dayOfWeek);
     }
+    lastEnableGPSSettingSync = millis();
 }
 
 bool getDataGps(byte &hour, byte &minute, byte &second, byte &day, byte &month, byte &year) {

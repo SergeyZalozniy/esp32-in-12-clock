@@ -6,9 +6,6 @@ import { showErrorToast, showSuccessToast } from '@components/toast';
 import { MAX_FILE_SIZE } from '@utils/constants.ts';
 import { getLanguage } from '@utils/getLanguage.ts';
 import { formatFileSize } from '@utils/formatFileSize.ts';
-import { websocketService } from '@services/websocket';
-import { WebSocketCommand } from '@services/websocketCommands';
-import { formatFileMetadata } from '@utils/fileMetaUtils.ts';
 
 const render = (containerElement: HTMLElement): void => {
   const lang = getLanguage();
@@ -139,38 +136,116 @@ export const initFileUpload = (containerElement: HTMLElement): void => {
     const uploadButtonText = translations['upload-file-button']?.[lang] || 'Upload File';
 
     if (uploadButton) {
-      uploadButton.textContent = uploadingText;
       uploadButton.disabled = true;
+      uploadButton.style.position = 'relative';
+      uploadButton.style.overflow = 'hidden';
     }
 
-    try {
-      const fileData = await selectedFile.arrayBuffer();
+    // Create progress bar element
+    const progressBar = document.createElement('div');
+    progressBar.style.position = 'absolute';
+    progressBar.style.left = '0';
+    progressBar.style.top = '0';
+    progressBar.style.height = '100%';
+    progressBar.style.width = '0%';
+    progressBar.style.backgroundColor = 'rgba(76, 175, 80, 0.3)';
+    progressBar.style.transition = 'width 0.3s ease';
+    progressBar.style.zIndex = '0';
 
-      const metadata = formatFileMetadata({
-        name: selectedFile.name,
-        size: selectedFile.size,
-        type: selectedFile.type || 'application/zip'
+    // Create text span for button text
+    const buttonText = document.createElement('span');
+    buttonText.style.position = 'relative';
+    buttonText.style.zIndex = '1';
+    buttonText.textContent = uploadingText;
+
+    if (uploadButton) {
+      uploadButton.innerHTML = '';
+      uploadButton.appendChild(progressBar);
+      uploadButton.appendChild(buttonText);
+    }
+
+    return new Promise((resolve, reject) => {
+      // Capture selectedFile in closure to avoid null issues
+      const fileToUpload = selectedFile;
+      if (!fileToUpload) {
+        reject(new Error('No file selected'));
+        return;
+      }
+
+      const xhr = new XMLHttpRequest();
+
+      // Track upload progress
+      xhr.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable) {
+          const percentComplete = (event.loaded / event.total) * 100;
+          progressBar.style.width = `${percentComplete}%`;
+          buttonText.textContent = `${uploadingText} ${Math.round(percentComplete)}%`;
+        }
       });
 
-      websocketService.sendFile(WebSocketCommand.FILE_UPLOAD, metadata, fileData);
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          console.log('File uploaded successfully:', fileToUpload.name);
+          const successTitle = translations['success-title']?.[lang] || 'Success';
+          const successMsg =
+            translations['file-uploaded-success']?.[lang] || 'File uploaded successfully!';
+          showSuccessToast(successTitle, `${successMsg}\n"${fileToUpload.name}"`);
+          removeFile();
+          resolve();
+        } else {
+          const errorTitle = translations['error-title']?.[lang] || 'Error';
+          const errorMsg = translations['upload-error']?.[lang] || 'Upload error. Please try again.';
+          showErrorToast(errorTitle, errorMsg);
+          reject(new Error(`Upload failed: ${xhr.status} ${xhr.statusText}`));
+        }
 
-      console.log('File sent via WebSocket:', selectedFile.name);
-      const successTitle = translations['success-title']?.[lang] || 'Success';
-      const successMsg =
-        translations['file-uploaded-success']?.[lang] || 'File uploaded successfully!';
-      showSuccessToast(successTitle, `${successMsg}\n"${selectedFile.name}"`);
+        // Reset button
+        if (uploadButton) {
+          uploadButton.innerHTML = uploadButtonText;
+          uploadButton.disabled = false;
+          uploadButton.style.position = '';
+          uploadButton.style.overflow = '';
+        }
+      });
 
-      removeFile();
-    } catch (error) {
-      console.error('Upload error:', error);
-      const errorTitle = translations['error-title']?.[lang] || 'Error';
-      const errorMsg = translations['upload-error']?.[lang] || 'Upload error. Please try again.';
-      showErrorToast(errorTitle, errorMsg);
-    } finally {
-      if (uploadButton) {
-        uploadButton.textContent = uploadButtonText;
-      }
-    }
+      xhr.addEventListener('error', () => {
+        console.error('Upload error');
+        const errorTitle = translations['error-title']?.[lang] || 'Error';
+        const errorMsg = translations['upload-error']?.[lang] || 'Upload error. Please try again.';
+        showErrorToast(errorTitle, errorMsg);
+
+        // Reset button
+        if (uploadButton) {
+          uploadButton.innerHTML = uploadButtonText;
+          uploadButton.disabled = false;
+          uploadButton.style.position = '';
+          uploadButton.style.overflow = '';
+        }
+
+        reject(new Error('Network error'));
+      });
+
+      xhr.addEventListener('abort', () => {
+        console.log('Upload aborted');
+
+        // Reset button
+        if (uploadButton) {
+          uploadButton.innerHTML = uploadButtonText;
+          uploadButton.disabled = false;
+          uploadButton.style.position = '';
+          uploadButton.style.overflow = '';
+        }
+
+        reject(new Error('Upload aborted'));
+      });
+
+      // Create FormData and send
+      const formData = new FormData();
+      formData.append('update', fileToUpload, fileToUpload.name);
+
+      xhr.open('POST', '/update', true);
+      xhr.send(formData);
+    });
   };
 
   const dropArea = containerElement.querySelector('#dropArea') as HTMLElement;

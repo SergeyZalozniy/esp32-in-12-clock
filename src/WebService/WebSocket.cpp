@@ -1,13 +1,21 @@
 #include <WebSocketsServer.h>
 #include <WiFi.h>
+#include <Update.h>
 
 #include "../Helpers/Constants.h"
 #include "../Helpers/EEPROMHelper.h"
 #include "../TimeCalculation/LocalTime.h"
 #include "../TimeCalculation/NTPTime.h"
 #include "../TimeCalculation/GPSTime.h"
+#include "../LampIndication/Brightness.h"
+#include "../LampIndication/Indication.h"
 
 WebSocketsServer webSocket = WebSocketsServer(webSocketPort);
+
+// Update tracking variables
+static bool updateInProgress = false;
+static size_t updateTotalSize = 0;
+static size_t updateReceivedSize = 0;
 
 enum SocketCommands {
   wifiPassword = 1,
@@ -29,6 +37,7 @@ enum SocketCommands {
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length);
 void procceedSocketEvent(SocketCommands command, String value);
 void sendWifiList();
+int splitAndTrim(String input, String output[], int maxParts, char separator = '|');
 
 void setupWebSocket() {
   webSocket.begin();
@@ -43,16 +52,34 @@ void webSocketSendCurrentState() {
     webSocket.broadcastTXT(String((char) SocketCommands::wifiPassword) + readWifiPassword());
     webSocket.broadcastTXT(String((char) SocketCommands::wifiSSID) + readWifiSSID());
     if (readAutoTimezone()) {
-      webSocket.broadcastTXT(String((char) SocketCommands::autoTimeZone) + "true");
+      webSocket.broadcastTXT(String((char) SocketCommands::autoTimeZone) + "auto");
     } else {
-      webSocket.broadcastTXT(String((char) SocketCommands::autoTimeZone) + "false");
+      webSocket.broadcastTXT(String((char) SocketCommands::autoTimeZone) + "manual");
     }
+    webSocket.broadcastTXT(String((char) SocketCommands::timezoneName) + getTimezoneName() + "|" + getPosix());
     if (readGPSEnable()) {
       webSocket.broadcastTXT(String((char) SocketCommands::enableGPS) + "true");
     } else {
       webSocket.broadcastTXT(String((char) SocketCommands::enableGPS) + "false");
     }
-    webSocket.broadcastTXT(String((char) SocketCommands::timezoneName) + getTimezoneName());
+    if (read24HourFormat()) {
+      webSocket.broadcastTXT(String((char) SocketCommands::timeMode) + "24h");
+    } else {
+      webSocket.broadcastTXT(String((char) SocketCommands::timeMode) + "12h");
+    }
+    
+    webSocket.broadcastTXT(String((char) SocketCommands::advancedMode) + "false");
+
+    NightModeSettings nightModeSettings = getNightModeSettings();
+    String nightModeStr = String(nightModeSettings.enabled ? "true" : "false") + "|" +
+                          nightModeSettings.startTime + "|" +
+                          nightModeSettings.endTime + "|" +
+                          String(nightModeSettings.backLightDisable ? "true" : "false") + "|" +
+                          String(nightModeSettings.brightnessPercent);
+    webSocket.broadcastTXT(String((char) SocketCommands::nightMode) + nightModeStr);
+
+    // Send brightness as percentage (0-100)
+    webSocket.broadcastTXT(String((char) SocketCommands::brightness) + String(readBrightness()));
 }
 
 void sendSocketTXT(String str) {
@@ -63,23 +90,24 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
   switch (type) {
     case WStype_DISCONNECTED:
       break;
+
     case WStype_CONNECTED:
       webSocketSendCurrentState();        
       break;
+
     case WStype_TEXT: {
       char buf[length + 1] = {};
       memcpy(buf, payload, length);
       String value = String(buf + 1);
       byte command = buf[0];
 
-      // Serial.println(command);
-      // Serial.println(value);
       procceedSocketEvent((SocketCommands) command, value);
       break;
     }
+
     case WStype_BIN:
-    //   webSocket.sendBIN(num, payload, length);
       break;
+
     default:
       break;
   }
@@ -96,7 +124,7 @@ void procceedSocketEvent(SocketCommands command, String value) {
     saveWifiSSID(value);
     break;
   case SocketCommands::autoTimeZone: {
-      boolean autoTimeZone = value.equalsIgnoreCase("true");
+      boolean autoTimeZone = value.equalsIgnoreCase("auto");
       saveAutoTimezone(autoTimeZone);
       if (autoTimeZone) {
         detectTimezone();
@@ -104,22 +132,67 @@ void procceedSocketEvent(SocketCommands command, String value) {
       }
       break;
     }
-  case SocketCommands::timezoneName:
-    if (readAutoTimezone()) {
-      saveAutoTimezone(false);
+  case SocketCommands::timezoneName: {
+      if (readAutoTimezone()) {
+        saveAutoTimezone(false);
+      }
+
+      String parts[2];
+      int count = splitAndTrim(value, parts, 2);
+      if (count == 2) {
+        setTimeZone(parts[0], parts[1]);
+      }
+      break;
     }
-    setTimeZone(value);
-    break;
   case SocketCommands::enableGPS: {
       boolean enableGPS = value.equalsIgnoreCase("true");
       saveGPSEnable(enableGPS);
       userDidUpdateGPSEnable(enableGPS);
       break;
     }
+  case SocketCommands::timeMode: {
+      boolean format24 = value.equalsIgnoreCase("24h");
+      save24HourFormat(format24);
+      break;
+    }
+  case SocketCommands::brightness: {
+      int brightness = value.toInt();
+      setBrightnessPercent(brightness);
+      saveBrightness(brightness);
+
+      int seconds = 1;
+      unsigned long startTime = millis();
+	    unsigned long millisElapse = 0;
+      while (millisElapse < seconds * 1000) {
+        millisElapse = millis() - startTime;
+        forceCorrectVoltage();
+        delay(10);
+		  }
+
+      break;
+    }
+  case SocketCommands::nightMode: {
+      // Parse night mode settings: enabled | startTime | endTime | backLightDisable | brightnessPercent
+      String parts[5];
+      int count = splitAndTrim(value, parts, 5);
+      if (count == 5) {
+        NightModeSettings settings;
+        settings.enabled = parts[0].equalsIgnoreCase("true");
+        settings.startTime = parts[1];
+        settings.endTime = parts[2];
+        settings.backLightDisable = parts[3].equalsIgnoreCase("true");
+        settings.brightnessPercent = parts[4].toInt();
+        saveNightModeSettings(settings);
+        Serial.println(F("Night mode settings saved"));
+      }
+      Serial.println(value);
+      break;
+    }
   case SocketCommands::requestWifiList:
     sendWifiList();
     break;
   default:
+  
     break;
   }
 }
@@ -152,4 +225,20 @@ void sendWifiList() {
 
   // Clean up scan results to free memory
   WiFi.scanDelete();
+}
+
+int splitAndTrim(String input, String output[], int maxParts, char separator) {
+  int partIndex = 0;
+  int lastIndex = 0;
+  
+  for (int i = 0; i <= input.length() && partIndex < maxParts; i++) {
+    if (i == input.length() || input.charAt(i) == separator) {
+      output[partIndex] = input.substring(lastIndex, i);
+      output[partIndex].trim();
+      partIndex++;
+      lastIndex = i + 1;
+    }
+  }
+  
+  return partIndex; // Return number of parts found
 }

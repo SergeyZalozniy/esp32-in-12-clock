@@ -9,8 +9,8 @@ export interface Translations {
 
 export const translations: Translations = {
   'nixie-clock': {
-    en: 'Nixie Clock',
-    uk: 'Nixie Clock'
+    en: 'Just Time',
+    uk: 'Just Time'
   },
   clock: {
     en: 'Clock',
@@ -21,8 +21,8 @@ export const translations: Translations = {
     uk: 'Wi-Fi'
   },
   'clock-settings': {
-    en: 'Nixie Clock Settings',
-    uk: 'Налаштування Nixie Годинника'
+    en: 'Just Time Settings',
+    uk: 'Налаштування Just Time годинника'
   },
   'wifi-settings': {
     en: 'Wi-Fi Settings',
@@ -41,8 +41,8 @@ export const translations: Translations = {
     uk: 'GPS увімкнено'
   },
   'gps-enabled-desc': {
-    en: 'Use GPS for accurate location and time synchronization',
-    uk: 'Використовувати GPS для точного визначення місцезнаходження та синхронізації часу'
+    en: 'Use GPS for time synchronization',
+    uk: 'Використовувати GPS для синхронізації часу'
   },
   'limit-file-upload': {
     en: 'Limit File Upload on Pre-Connect Screen',
@@ -57,8 +57,8 @@ export const translations: Translations = {
     uk: 'Нічний режим'
   },
   'night-mode-desc': {
-    en: 'Automatically reduce brightness during night hours',
-    uk: 'Автоматично зменшувати яскравість у нічні години'
+    en: 'Automatically reduce lamps brightness during night hours',
+    uk: 'Автоматично зменшувати яскравість ламп у нічні години'
   },
   'start-time': {
     en: 'Start Time',
@@ -73,8 +73,8 @@ export const translations: Translations = {
     uk: 'Яскравість вночі'
   },
   'disable-backlight': {
-    en: 'Disable Backlight',
-    uk: 'Вимкнути підсвітку'
+    en: 'Adjust Backlight',
+    uk: 'Налаштувати підсвітку'
   },
   'disable-backlight-desc': {
     en: 'Turn off backlight during night mode',
@@ -97,12 +97,12 @@ export const translations: Translations = {
     uk: 'Виберіть свій місцевий часовий пояс для точного відображення часу'
   },
   brightness: {
-    en: 'Brightness',
-    uk: 'Яскравість'
+    en: 'Lamp\'s brightness',
+    uk: 'Яскравість ламп'
   },
   'brightness-desc': {
-    en: 'Adjust the display brightness level',
-    uk: 'Налаштуйте рівень яскравості дисплея'
+    en: 'Adjust the lamps brightness level',
+    uk: 'Налаштуйте рівень яскравості ламп'
   },
   'upload-file': {
     en: 'Upload File',
@@ -157,8 +157,8 @@ export const translations: Translations = {
     uk: 'Завантаження файлу'
   },
   'file-upload-desc': {
-    en: 'Upload configuration files or firmware updates for your Nixie clock',
-    uk: 'Завантажте файли конфігурації або оновлення прошивки для вашого Nixie годинника'
+    en: 'Upload firmware update for your Just Time clock',
+    uk: 'Завантажте файл оновлення прошивки для вашого Just Time годинника'
   },
   'drag-drop-file': {
     en: 'Drag and drop file here or click to select',

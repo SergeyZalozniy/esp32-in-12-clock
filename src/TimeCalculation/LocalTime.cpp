@@ -15,9 +15,19 @@ unsigned long lastDateStringWasUpdated = UINT_MAX;
 time_t getLocalTime();
 
 void setupLocalTime() {
-    if (localTimeZone.setCache(PREFERENCE_NAME_SPACE, F("timezone"))) {
-        // Serial.println(F("Has timezone cache"));
+  if (readAutoTimezone()) {
+    if (!localTimeZone.setCache(PREFERENCE_NAME_SPACE, F("timezone"))) {
+      localTimeZone.setPosix(readManualTimeZoneOlson());
     }
+  } else {
+    localTimeZone.setPosix(readManualTimeZoneOlson());
+  }
+}
+
+boolean setTimeZone(String tz, String posix) {
+  saveManualTimeZoneName(tz);
+  saveManualTimeZoneOlson(posix);
+  return localTimeZone.setPosix(posix);
 }
 
 boolean setTimeZone(String tz) {
@@ -33,13 +43,22 @@ boolean setTimeZone(String tz) {
 }
 
 String getTimezoneName() {
-  return localTimeZone.getTimezoneName();
+  if (readAutoTimezone()) {
+    return localTimeZone.getTimezoneName();
+  }
+  return readManualTimeZoneName();
 }
 
-int* getTime() {
+String getPosix() {
+  return localTimeZone.getPosix();
+}
+
+int* getTime(boolean force24HourFormat) {
   static int time[lampsCount];
-  int hours = localTimeZone.hour();
+  bool time24hFormat = (read24HourFormat() || force24HourFormat);
+  int hours = time24hFormat ? localTimeZone.hour() : localTimeZone.hourFormat12();
   int minutes = localTimeZone.minute();
+
   time[0] = hours / 10;
   time[1] = hours % 10;
   time[2] = minutes / 10;
@@ -68,7 +87,7 @@ int* IRAM_ATTR getCachedDate() {
 
 void updateTimeCache() {
   if (millis() - lastTimeStringWasUpdated > 1000) {
-    updatedTime = getTime();
+    updatedTime = getTime(false);
     lastTimeStringWasUpdated = millis();
   }
   if (millis() - lastDateStringWasUpdated > 15000) {

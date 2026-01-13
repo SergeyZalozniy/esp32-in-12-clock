@@ -2053,7 +2053,7 @@ export const TIMEZONES: TimezoneOption[] = [
   },
   {
     value: 'Europe/Kiev',
-    label: 'Europe/Kiev',
+    label: 'Europe/Kyiv',
     offset: 'EET-2EEST,M3.5.0/3,M10.5.0/4'
   },
   {
@@ -2230,11 +2230,6 @@ export const TIMEZONES: TimezoneOption[] = [
     value: 'Europe/Zagreb',
     label: 'Europe/Zagreb',
     offset: 'CET-1CEST,M3.5.0,M10.5.0/3'
-  },
-  {
-    value: 'Europe/Kiev',
-    label: 'Europe/Kiev',
-    offset: 'EET-2EEST,M3.5.0/3,M10.5.0/4'
   },
   {
     value: 'Europe/Zurich',

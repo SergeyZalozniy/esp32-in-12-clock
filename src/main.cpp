@@ -4,6 +4,7 @@
 
 #include "Helpers/Constants.h"
 #include "Helpers/EEPROMHelper.h"
+#include "Helpers/NightModeSettings.h"
 
 #include "TimeCalculation/BuildTime.h"
 #include "TimeCalculation/RealTimeClock.h"
@@ -20,8 +21,8 @@
 
 #include "LedIndication/LedStrip.h"
 
+unsigned long lastNightModeCheck = 0;
 hw_timer_t * indicationTimer = NULL;
-volatile bool initialVoltageCorrection = false;
 
 void IRAM_ATTR onLampIndication() { 
   bool lowDot = false, upDot = false;
@@ -36,11 +37,14 @@ void IRAM_ATTR onLampIndication() {
 
 void setup(){
   Serial.begin(115200);
+
   setupEEPROM();
   setupIndication();
   setupBrightness();
   setupLedStrip();
-  setupWifi();
+
+  tryConnectToWifi();
+
   // turnOffLeds();
 
   turnOffPWM();
@@ -49,6 +53,7 @@ void setup(){
   setupRTC();
   setupGPS();
   setupNTP();
+
   setupWebServer();
   setupWebSocket();
 
@@ -68,37 +73,30 @@ void setup(){
 }
 
 void loop() {
+  handleWifiLoop();
   handleClient();
   handleWebSocketClients();
 
-  updateDesireVoltageWithLightSensor();
   updateTimeCache();
   updateSecondsCache();
 
   syncRTCWithInternalTime();
   syncGPSTimeWithRTC();
   syncNTPTimeWithRTC();
-  
-  // if (isLedStripActive()) || !initialVoltageCorrection) {
-  //   initialVoltageCorrection = true;
-  //   doEnumerationAndCorrectVoltage(4);
-  //   turnOffLeds();
-  // }
 
-    //   } else {
-    //   updateLedColor();
-    //   if (hasDotDelimeter) {
-    //     doLoadingIndication();
-    //     forceCorrectVoltage();
-    //   } else {
-    //     turnOffPWM();
-    //   }
-    //   if (!isLedStripActive()) { 
-    //     turnOffIndication();
-    //   }
-    // }
+  // updateLedColor();
   if (getState() == transition) {
     correctVoltage();
     turnOffLeds();
+
+    if (millis() - lastNightModeCheck > 60000) {
+      lastNightModeCheck = millis();
+
+      if (shouldChangeToNightMode(getTime(true))) {
+        setBrightnessPercent(0);
+      } else {
+        setBrightnessPercent(readBrightness());
+      }
+    }
   }
 }

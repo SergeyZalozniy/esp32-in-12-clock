@@ -15,6 +15,7 @@ WiFiUDP ntpUDP;
 File fsUploadFile;
 WebServer server(80);
 DNSServer dnsServer;
+IPAddress apIP(192, 168, 4, 1);
 
 void HTTP_init();
 bool handleFileRead(String path);
@@ -28,31 +29,31 @@ void setupWebServer() {
         !SPIFFS.begin(false);
     }
 
-    if (MDNS.begin("nixie")) {
+    if (MDNS.begin("justtime")) {
         // Serial.println(F("MDNS responder started"));
-        if (MDNS.addService("_http", "_tcp", 80)) {
-            // Serial.println(F("Add _http port 80"));
-        }
-        if (MDNS.addService("_ws", "_tcp", 81)) {
-            // Serial.println(F("Add _ws port 81"));
-        }
-    } else {
-        // Serial.println(F("MDNS.begin failed"));
+        MDNS.addService("_http", "_tcp", 80);
+        MDNS.addService("_ws", "_tcp", 81);
     }
 
-    if (WiFi.status() != WL_CONNECTED) {
-        dnsServer.setTTL(300);
-        dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
-        dnsServer.start(53, "*", WiFi.softAPIP());
-    }
+    dnsServer.setTTL(300);
+    dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
+    dnsServer.start(53, "*", apIP);
 
     HTTP_init();
 }
 
 void handleClient() {
     server.handleClient();
+
     if (WiFi.status() != WL_CONNECTED) {
+        if (!dnsServer.isUp()) {
+            dnsServer.start(53, "*", apIP);
+        }
         dnsServer.processNextRequest();
+    } else {
+        if (dnsServer.isUp()) {
+            dnsServer.stop();
+        }
     }
 }
 
@@ -62,32 +63,44 @@ public:
   virtual ~CaptiveRequestHandler() {}
 
   bool canHandle(HTTPMethod method, String uri) {
-    if (uri.startsWith("/js/") || uri.startsWith("/css/")) {
+    // Extract base URI without parameters
+    String baseUri = uri;
+    int queryIndex = uri.indexOf('?');
+    if (queryIndex != -1) {
+        baseUri = uri.substring(0, queryIndex);
+    }
+
+    // Don't handle actual resources
+    if (baseUri.startsWith("/assets/") ||
+        baseUri.startsWith("/js/") ||
+        baseUri.startsWith("/css/") ||
+        baseUri.endsWith(".js") ||
+        baseUri.endsWith(".css") ||
+        baseUri.endsWith(".svg") ||
+        baseUri.endsWith(".ico") ||
+        baseUri.endsWith(".png") ||
+        baseUri.endsWith(".jpg")) {
         return false;
     }
-    return (uri != "/ssid") && 
-    (uri != "/index.html") &&
-    (uri != "/update");
+
+    // Don't handle API endpoints
+    if (baseUri == "/update" ||
+        baseUri == "/list" ||
+        baseUri == "/all") {
+        return false;
+    }
+
+    // Handle everything else (captive portal detection URLs and unknown paths)
+    return WiFi.status() != WL_CONNECTED;
   }
 
   bool handle(WebServer& server, HTTPMethod requestMethod, String requestUri) {
-    // Serial.println(requestUri);
-
-    return handleFileRead("/index.html");
+    // Redirect to justtime.local with parameters
+    server.sendHeader("Location", "http://justtime.local/?page=wifi", true);
+    server.send(302, "text/plain", "");
+    return true;
   }
 };
-
-String formatBytes(size_t bytes) {
-    if (bytes < 1024) {
-        return String(bytes) + "B";
-    } else if (bytes < (1024 * 1024)) {
-        return String(bytes / 1024.0) + "KB";
-    } else if (bytes < (1024 * 1024 * 1024)) {
-        return String(bytes / 1024.0 / 1024.0) + "MB";
-    } else {
-        return String(bytes / 1024.0 / 1024.0 / 1024.0) + "GB";
-    }
-}
 
 String getContentType(String filename) {
     if (server.hasArg("download"))
@@ -148,55 +161,6 @@ bool handleFileRead(String path) {
         return true;
     }
     return false;
-}
-
-void handleFileUpload() {
-    if (server.uri() != "/edit")
-        return;
-    HTTPUpload &upload = server.upload();
-    if (upload.status == UPLOAD_FILE_START) {
-        String filename = upload.filename;
-        if (!filename.startsWith("/"))
-            filename = "/" + filename;
-        fsUploadFile = SPIFFS.open(filename, "w");
-        filename = String();
-    } else if (upload.status == UPLOAD_FILE_WRITE) {
-        if (fsUploadFile)
-            fsUploadFile.write(upload.buf, upload.currentSize);
-    } else if (upload.status == UPLOAD_FILE_END) {
-        if (fsUploadFile)
-            fsUploadFile.close();
-    }
-}
-
-void handleFileDelete() {
-    if (server.args() == 0)
-        return server.send(500, "text/plain", "BAD ARGS");
-    String path = server.arg(0);
-    if (path == "/")
-        return server.send(500, "text/plain", "BAD PATH");
-    if (!SPIFFS.exists(path))
-        return server.send(404, "text/plain", "FileNotFound");
-    SPIFFS.remove(path);
-    server.send(200, "text/plain", "");
-    path = String();
-}
-
-void handleFileCreate() {
-    if (server.args() == 0)
-        return server.send(500, "text/plain", "BAD ARGS");
-    String path = server.arg(0);
-    if (path == "/")
-        return server.send(500, "text/plain", "BAD PATH");
-    if (SPIFFS.exists(path))
-        return server.send(500, "text/plain", "FILE EXISTS");
-    File file = SPIFFS.open(path, "w");
-    if (file)
-        file.close();
-    else
-        return server.send(500, "text/plain", "CREATE FAILED");
-    server.send(200, "text/plain", "");
-    path = String();
 }
 
 void handleFileList() {
@@ -269,21 +233,54 @@ void handleNotFound() {
 }
 
 void HTTP_init() {
-    server.on("/config.json", HTTP_GET, []()
-              { 
-                  if (!handleFileRead("/config.json"))
-                      server.send(404, "text/plain", "FileNotFound");
-                // struct tm timeinfo;
-                // if (getLocalTime(&timeinfo, 1000)) {
-                //     String res = String(timeinfo.tm_hour) + ":" + String(timeinfo.tm_min) + ":" + String(timeinfo.tm_sec) + " - " + String(timeinfo.tm_mday) + " \\ " + String(timeinfo.tm_mon) + " \\ " + String(timeinfo.tm_year) + " || " + String(timeinfo.tm_wday);
-                //     server.send(200, "text/plain", res);
-                // } else {
-                    // server.send(200, "text/plain", "Fail");
-                // }
-               });
-    if (WiFi.status() != WL_CONNECTED) {
-        server.addHandler(new CaptiveRequestHandler());
-    }
+    // Register static assets FIRST before any handlers
+    server.serveStatic("/assets", SPIFFS, "/assets", "max-age=86400");
+    server.serveStatic("/clock.svg", SPIFFS, "/clock.svg", "max-age=86400");
+
+    // Captive portal detection endpoints
+    // Android captive portal detection
+    server.on("/generate_204", HTTP_GET, []() {
+        Serial.println("Android captive portal check");
+        server.sendHeader("Location", "http://justtime.local/?page=wifi", true);
+        server.send(302, "text/html", "");
+    });
+
+    // iOS/macOS captive portal detection
+    server.on("/hotspot-detect.html", HTTP_GET, []() {
+        Serial.println("iOS/macOS captive portal check");
+        server.sendHeader("Location", "http://justtime.local/?page=wifi", true);
+        server.send(302, "text/html", "");
+    });
+
+    // Apple connectivity check
+    server.on("/library/test/success.html", HTTP_GET, []() {
+        Serial.println("Apple connectivity check");
+        server.sendHeader("Location", "http://justtime.local/?page=wifi", true);
+        server.send(302, "text/html", "");
+    });
+
+    // Microsoft captive portal detection
+    server.on("/connecttest.txt", HTTP_GET, []() {
+        Serial.println("Microsoft captive portal check");
+        server.sendHeader("Connection", "close");
+        server.send(200, "text/plain", "Microsoft Connect Test");
+    });
+
+    // Firefox captive portal detection
+    server.on("/success.txt", HTTP_GET, []() {
+        Serial.println("Firefox captive portal check");
+        server.send(200, "text/plain", "success");
+    });
+
+    // Windows 10 captive portal detection
+    server.on("/ncsi.txt", HTTP_GET, []() {
+        Serial.println("Windows captive portal check");
+        server.send(200, "text/plain", "Microsoft NCSI");
+    });
+
+    // Add the captive request handler to redirect all other unknown requests
+    server.addHandler(new CaptiveRequestHandler());
+
     server.on("/", HTTP_GET, []()
               {
                   if (!handleFileRead("/index.html"))
@@ -296,30 +293,7 @@ void HTTP_init() {
                       server.send(404, "text/plain", "FileNotFound");
               }); //list directory
 
-    server.on("/settings.htm", HTTP_GET, []()
-              {
-                  if (!handleFileRead("/settings.htm"))
-                      server.send(404, "text/plain", "FileNotFound");
-              });
-
-    server.on("/settings", HTTP_GET, []()
-              {
-                  if (!handleFileRead("/settings.htm"))
-                      server.send(404, "text/plain", "FileNotFound");
-              });
-
     server.on("/list", HTTP_GET, handleFileList);
-
-    server.on("/ssid", HTTP_GET, []()
-              {
-                  saveWifiPassword(server.arg("password"));
-                  saveWifiSSID(server.arg("ssid"));
-                  server.send(200, "text/plain", "OK");
-                  server.client().stop();
-                  server.stop();
-                  delay(200);
-                  ESP.restart();  
-              });
 
     server.on("/update", HTTP_POST, []()
         {
@@ -337,7 +311,6 @@ void HTTP_init() {
                 } else if (filename.equalsIgnoreCase("spiffs.bin")) {
                     type = U_SPIFFS;
                 }
-                turnOffIndication();
                 if (!Update.begin(UPDATE_SIZE_UNKNOWN, type)) {
                     Update.printError(Serial);
                 }
@@ -353,13 +326,6 @@ void HTTP_init() {
             }
         });
 
-    server.on("/edit", HTTP_PUT, handleFileCreate);
-
-    server.on("/edit", HTTP_DELETE, handleFileDelete);
-    server.on("/edit", HTTP_POST, []() { 
-        server.send(200, "text/plain", ""); 
-        }, handleFileUpload);
-
     // Captive portal: serve index.html for unknown requests in AP mode
     server.onNotFound([]() {
         if (WiFi.status() != WL_CONNECTED) {
@@ -373,11 +339,6 @@ void HTTP_init() {
         }
     });
 
-    // Vite-built assets
-    server.serveStatic("/assets", SPIFFS, "/assets", "max-age=86400");
-    server.serveStatic("/clock.svg", SPIFFS, "/clock.svg", "max-age=86400");
-    server.serveStatic("/favicon.ico", SPIFFS, "/favicon.ico", "max-age=86400");
-
     server.on("/all", HTTP_GET, []() {
                   String json = "{";
                   json += "\"heap\":" + String(ESP.getFreeHeap());
@@ -388,5 +349,4 @@ void HTTP_init() {
                   json = String();
               });
     server.begin();
-    // Serial.println(F("HTTP server started"));
 }

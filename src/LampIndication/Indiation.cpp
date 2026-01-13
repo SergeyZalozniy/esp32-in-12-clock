@@ -14,8 +14,8 @@ volatile ClockState state = transition;
 static int seconds[lampsCount];
 int* digitsToDisplay = seconds;
 
- void IRAM_ATTR setNumber(int digit);
- int* IRAM_ATTR getTransitionStep(int *from, int *to, byte iteration);
+ void setNumber(int digit);
+ int* getTransitionStep(int *from, int *to, byte iteration);
 
  void setupIndication() {
     pinMode(decoder1Pin, OUTPUT);
@@ -42,7 +42,7 @@ ClockState getState() {
 static int cachedSecond = 0;
 static unsigned long lastSecondUpdate = 0;
 
-int* IRAM_ATTR getSeconds(bool &lowDot, bool &upDot) {
+int* getSeconds(bool &lowDot, bool &upDot) {
   static int seconds[lampsCount];
   lowDot = cachedSecond % 2;
   upDot = cachedSecond % 2;
@@ -61,7 +61,7 @@ void updateSecondsCache() {
   }
 }
 
-int* IRAM_ATTR getDigitsToDisplay(bool &lowDot, bool &upDot) {
+int* getDigitsToDisplay(bool &lowDot, bool &upDot) {
   static ClockState transitionToState;
   static unsigned long lastTimeStateChanged = 0;
 
@@ -130,7 +130,7 @@ int* IRAM_ATTR getDigitsToDisplay(bool &lowDot, bool &upDot) {
   return digitsToDisplay;
 } 
 
-int* IRAM_ATTR getTransitionStep(int *from, int *to, byte iteration) {
+int* getTransitionStep(int *from, int *to, byte iteration) {
   static int result[lampsCount];
   for (int i = 0; i < lampsCount; i++) {
     int curFrom = from[i];
@@ -144,7 +144,7 @@ int* IRAM_ATTR getTransitionStep(int *from, int *to, byte iteration) {
   return result;
 }
 
- void IRAM_ATTR doIndication(int *digits, bool lowDot, bool upDot) {
+ void doIndication(int *digits, bool lowDot, bool upDot) {
   if ((micros() - lastTimeInterval1Started) < 3173)
     return ;
   lastTimeInterval1Started = micros();
@@ -208,24 +208,7 @@ void doLoadingIndication() {
   lastTimeInterval1Started = micros();
 }
 
-void doEnumerationAndCorrectVoltage(int seconds) {
-  unsigned long startTime = millis();
-	unsigned long millisElapse = 0;
-  int digits[lampsCount];
-	setAimVoltage(minVoltage + (maxVoltage - minVoltage) * 0.85);
-	while (millisElapse < seconds * 1000) {
-		millisElapse = millis() - startTime;
-		int number = (millisElapse / 100) % 10;
-		for (int i = 0; i < lampsCount; i++) {
-			digits[i] = number;
-		}
-		forceCorrectVoltage();
-		doIndication(digits, true, true);
-	}
-	setAimVoltage((maxVoltage + minVoltage) / 2);
-}
-
-void IRAM_ATTR setNumber(int digit) {
+void setNumber(int digit) {
   #if VERSION == 1
   switch (digit) {
     case -1:

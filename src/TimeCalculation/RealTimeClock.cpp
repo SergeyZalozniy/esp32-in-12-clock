@@ -15,11 +15,34 @@ unsigned long lastTimeRTCSync = UINT32_MAX;
 byte decToBcd(byte val);
 byte bcdToDec(byte val);
 
+// Validate if timezone date is same or after build date
+bool isDateValidForTimezone(Timezone* tz) {
+  int currentYear = tz->year();
+  int currentMonth = tz->month();
+  int currentDay = tz->day();
+
+  // Check if year is after build year
+  bool yearValid = (currentYear > BUILD_YEAR);
+
+  // If year matches build year, also check month and day
+  if (currentYear == BUILD_YEAR) {
+    if (currentMonth > BUILD_MONTH) {
+      yearValid = true;
+    } else if (currentMonth == BUILD_MONTH && currentDay >= BUILD_DAY) {
+      yearValid = true;
+    } else {
+      yearValid = false;
+    }
+  }
+
+  return yearValid;
+}
+
 void setupRTC() {
   Wire.begin(i2csDataPin, i2csClockPin);
 }
 
-boolean IRAM_ATTR hasValidDateAndTime() {
+boolean hasValidDateAndTime() {
   return dateTimeIsValid;
 }
 
@@ -31,9 +54,10 @@ void syncRTCWithInternalTime() {
 
   byte hours, minutes, seconds, day, month, year, dayOfWeek;
   getRTCTime(seconds, minutes, hours, dayOfWeek, day, month, year);
-
   setTime((int)hours, (int)minutes, (int)seconds, (int)day, (int)month, (int)year);
-  dateTimeIsValid = defaultTZ->year() >= BUILD_YEAR;
+
+  // Validate date and time using the helper method
+  dateTimeIsValid = isDateValidForTimezone(defaultTZ);
 }
 
 void setRTCDateTime(byte h, byte m, byte s, byte d, byte mon, byte y, byte w) {

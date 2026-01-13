@@ -3,4 +3,4 @@ export enum TimeMode {
   TWENTY_FOUR_HOUR = '24h'
 }
 
-export const MAX_FILE_SIZE = 1031 * 1024;
+export const MAX_FILE_SIZE = 2048 * 1024;

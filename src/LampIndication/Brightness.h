@@ -2,7 +2,7 @@
 void setupBrightness();
 void turnOffPWM();
 void turnOnPWM();
-void setAimVoltage(int voltage);
-void updateDesireVoltageWithLightSensor();
+void setBrightnessPercent(int percent);
 void forceCorrectVoltage();
 void correctVoltage();
+void handleNightMode();

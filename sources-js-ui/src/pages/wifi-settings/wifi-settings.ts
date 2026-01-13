@@ -462,18 +462,65 @@ const initWiFiSettings = () => {
     websocketService.send(WebSocketCommand.REQUEST_WIFI_LIST, '');
   };
 
+  // Check if WiFi settings page is currently active
+  const isWiFiPageActive = () => {
+    const wifiPage = document.querySelector('[data-page="wifi"]');
+    return wifiPage?.classList.contains('page--active') || false;
+  };
+
+  let wifiListInterval: ReturnType<typeof setInterval> | null = null;
+
+  // Start/stop interval based on page visibility
+  const startWiFiScanning = () => {
+    if (wifiListInterval) return; // Already running
+    requestWiFiList(); // Immediate request
+    wifiListInterval = setInterval(() => {
+      if (isWiFiPageActive()) {
+        requestWiFiList();
+      }
+    }, 10000);
+  };
+
+  const stopWiFiScanning = () => {
+    if (wifiListInterval) {
+      clearInterval(wifiListInterval);
+      wifiListInterval = null;
+    }
+  };
+
   // Request WiFi list when WebSocket connects
   websocketService.onConnect(() => {
     requestWiFiList();
   });
 
-  // Set up interval for subsequent requests
-  const wifiListInterval = setInterval(requestWiFiList, 10000);
+  // Listen for page changes via MutationObserver
+  const wifiPage = document.querySelector('[data-page="wifi"]');
+  if (wifiPage) {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+          if (isWiFiPageActive()) {
+            startWiFiScanning();
+          } else {
+            stopWiFiScanning();
+          }
+        }
+      });
+    });
 
-  // Clean up interval when page is destroyed
-  window.addEventListener('beforeunload', () => {
-    clearInterval(wifiListInterval);
-  });
+    observer.observe(wifiPage, { attributes: true });
+
+    // Start scanning if WiFi page is already active
+    if (isWiFiPageActive()) {
+      startWiFiScanning();
+    }
+
+    // Clean up on page unload
+    window.addEventListener('beforeunload', () => {
+      observer.disconnect();
+      stopWiFiScanning();
+    });
+  }
 };
 
 initWiFiSettings();

@@ -10,7 +10,8 @@
 #include "LocalTime.h"
 #include "../WebService/WebSocket.h"
 
-unsigned long lastTimeNPTSync = 100000;
+unsigned long nextTimeNPTSync = 0;
+unsigned char failRequestCount = 0;
 
 String getRequestLocation();
 boolean detectTimezone();
@@ -27,7 +28,7 @@ void setupNTP() {
 }
 
 void syncNTPTimeWithRTC() {
-    bool needUpdate = millis() - lastTimeNPTSync > 60 * 60 * 1000;
+    bool needUpdate = millis() > nextTimeNPTSync;
     if (!needUpdate) {
         return ;
     }
@@ -36,12 +37,17 @@ void syncNTPTimeWithRTC() {
         return ;
     }
 
-    lastTimeNPTSync = millis();
-
     updateNTP();
 
-    setRTCDateTime((byte)UTC.hour(), (byte)UTC.minute(), (byte)UTC.second(), (byte)UTC.day(), (byte)UTC.month(), (byte)(UTC.year() % 100), (byte)UTC.weekday());
-    syncRTCWithInternalTime();
+    if (isDateValidForTimezone(&UTC) && timeStatus() == timeSet) {
+        setRTCDateTime((byte)UTC.hour(), (byte)UTC.minute(), (byte)UTC.second(), (byte)UTC.day(), (byte)UTC.month(), (byte)(UTC.year() % 100), (byte)UTC.weekday());
+        syncRTCWithInternalTime();
+        nextTimeNPTSync = millis() + 60 * 60 * 1000; // Sync every 60 minutes
+        failRequestCount = 0;
+    } else {
+        failRequestCount = max(failRequestCount + 1, 12);
+        nextTimeNPTSync = millis() + (unsigned long)failRequestCount * 5 * 1000;
+    }
 }
 
 boolean detectTimezone() {

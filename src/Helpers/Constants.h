@@ -1,7 +1,8 @@
 const int lampsCount = 4; // Количество ламп
 
-const String wifiName = F("Nixie Clock v2.0");
+const String wifiName = F("Just Time");
 const int webSocketPort = 81;
+
 #define PREFERENCE_NAME_SPACE "Nixie Settings"
 #define SIMPLE_ANIMATION true
 
@@ -109,8 +110,8 @@ const int webSocketPort = 81;
     const int toch2 = 26; //Точки между сигментами верх
     const bool hasLightSensor = false; 
 
-    const int minVoltage = 1880;
-    const int maxVoltage = minVoltage;
+    const int minVoltage = 1600;
+    const int maxVoltage = 2160;
 #endif
 
 /* #### esp32 PINs end  #### */
@@ -124,3 +125,5 @@ const int resolution = 8;
 const int defaultDuty = 255;
 
 // Voltage regulation range
+
+
