@@ -4,41 +4,71 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/clock.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Nixie-clock</title>
+    <title>Just Time</title>
   </head>
 
   <body>
     <header class="header">
       <div class="header__container flex items-center justify-between gap-16">
         <div class="header__logo flex items-center gap-12 flex-shrink-0">
-          <img src="/src/assets/clock-icon.svg" alt="Clock" class="header__icon flex-shrink-0" width="24" height="24">
-          <h1 class="header__title">Nixie Clock</h1>
+          <img
+            src="/src/assets/clock-icon.svg"
+            alt="Clock"
+            class="header__icon flex-shrink-0"
+            width="24"
+            height="24"
+          />
+          <h1 class="header__title">Just Time</h1>
         </div>
         <div class="header__right flex items-center gap-16 flex-shrink-0">
           <nav class="header__nav flex gap-8 flex-shrink-0">
-            <button class="nav-tab flex items-center gap-8 nav-tab--active" data-page="clock">
-              <img src="/src/assets/clock-icon.svg" alt="Clock" class="nav-tab__icon flex-shrink-0" width="20" height="20">
+            <button
+              class="nav-tab flex items-center gap-8 nav-tab--active"
+              data-page="clock"
+            >
+              <img
+                src="/src/assets/clock-icon.svg"
+                alt="Clock"
+                class="nav-tab__icon flex-shrink-0"
+                width="20"
+                height="20"
+              />
               <span class="nav-tab__text">Clock</span>
             </button>
             <button class="nav-tab flex items-center gap-8" data-page="wifi">
-              <img src="/src/assets/wifi-icon.svg" alt="Wi-Fi" class="nav-tab__icon flex-shrink-0" width="20" height="20">
+              <img
+                src="/src/assets/wifi-icon.svg"
+                alt="Wi-Fi"
+                class="nav-tab__icon flex-shrink-0"
+                width="20"
+                height="20"
+              />
               <span class="nav-tab__text">Wi-Fi</span>
             </button>
           </nav>
           <div class="header__controls flex gap-8 flex-shrink-0">
             <div class="dropdown language-switcher">
-              <button class="dropdown__button flex items-center gap-4 justify-center flex-shrink-0 language-switcher__button" aria-label="Switch language">
+              <button
+                class="dropdown__button flex items-center gap-4 justify-center flex-shrink-0 language-switcher__button"
+                aria-label="Switch language"
+              >
                 <span class="dropdown__text-short">🇬🇧</span>
                 <span class="dropdown__text-full">English</span>
                 <span class="dropdown__arrow">▼</span>
               </button>
               <div class="dropdown__menu language-switcher__menu">
-                <button class="dropdown__item flex items-center gap-12 language-switcher__item" data-language="en">
+                <button
+                  class="dropdown__item flex items-center gap-12 language-switcher__item"
+                  data-language="en"
+                >
                   <span class="dropdown__item-icon flex-shrink-0">🇬🇧</span>
                   <span class="dropdown__item-text flex-1">English</span>
                   <span class="dropdown__item-check">✓</span>
                 </button>
-                <button class="dropdown__item language-switcher__item" data-language="uk">
+                <button
+                  class="dropdown__item language-switcher__item"
+                  data-language="uk"
+                >
                   <span class="dropdown__item-icon flex-shrink-0">🇺🇦</span>
                   <span class="dropdown__item-text flex-1">Українська</span>
                   <span class="dropdown__item-check">✓</span>
@@ -54,16 +84,14 @@
       <div class="page page--active" data-page="clock">
         <div class="page__container">
           <h2 class="page__title">Nixie Clock Settings</h2>
-          <div class="settings-content flex flex-col gap-24">
-          </div>
+          <div class="settings-content flex flex-col gap-24"></div>
         </div>
       </div>
 
       <div class="page" data-page="wifi">
         <div class="page__container">
           <h2 class="page__title">Wi-Fi Settings</h2>
-          <div class="settings-content flex flex-col gap-24">
-          </div>
+          <div class="settings-content flex flex-col gap-24"></div>
         </div>
       </div>
     </main>

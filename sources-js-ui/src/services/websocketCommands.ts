@@ -11,5 +11,6 @@ export enum WebSocketCommand {
   ADVANCED_MODE = 10,
   LANGUAGE = 11,
   WIFI_LIST = 12,
-  REQUEST_WIFI_LIST = 13
+  REQUEST_WIFI_LIST = 13,
+  CUSTOM_TIME = 14,
 }
