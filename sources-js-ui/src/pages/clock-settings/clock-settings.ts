@@ -37,6 +37,14 @@ const initCustomTime = (containerElement: HTMLElement) => {
       </p>
 
       <div class="custom-time">
+        <div class="custom-time__toggle flex gap-8">
+          <button class="custom-time__toggle-btn custom-time__toggle-btn--active flex-1" data-mode="auto" data-i18n="automatic">
+            ${translations["automatic"]?.[lang] || "Automatic"}
+          </button>
+          <button class="custom-time__toggle-btn flex-1" data-mode="manual" data-i18n="manual">
+            ${translations["manual"]?.[lang] || "Manual"}
+          </button>
+        </div>
         <div class="custom-time__content">
           <div class="custom-time__date-group">
             <label class="custom-time__label" data-i18n="date">Date</label>
@@ -92,11 +100,6 @@ const initCustomTime = (containerElement: HTMLElement) => {
           <button class="custom-time__button" id="custom-time-submit" data-i18n="set-time">
             Set Time
           </button>
-
-          <div class="custom-time__timestamp" id="custom-time-timestamp" style="display: none;">
-            <span class="custom-time__timestamp-label" data-i18n="timestamp">Timestamp:</span>
-            <span class="custom-time__timestamp-value" id="custom-time-timestamp-value"></span>
-          </div>
         </div>
       </div>
     </div>
@@ -117,6 +120,135 @@ const initCustomTime = (containerElement: HTMLElement) => {
   const submitButton = containerElement.querySelector(
     "#custom-time-submit"
   ) as HTMLButtonElement;
+
+  // Mode management
+  let timeMode: "auto" | "manual" = "auto";
+  let syncInterval: number | null = null;
+  let isInputActive = false;
+
+  const switchTimeMode = (mode: "auto" | "manual") => {
+    timeMode = mode;
+
+    // Update button states
+    const toggleButtons = containerElement.querySelectorAll(
+      ".custom-time__toggle-btn"
+    );
+    toggleButtons.forEach((button) => {
+      const btnMode = button.getAttribute("data-mode");
+      if (btnMode === mode) {
+        button.classList.add("custom-time__toggle-btn--active");
+      } else {
+        button.classList.remove("custom-time__toggle-btn--active");
+      }
+    });
+
+    // Update input states
+    const inputs = [dateInput, hourInput, minuteInput, secondInput];
+    inputs.forEach((input) => {
+      if (input) {
+        if (mode === "auto") {
+          input.disabled = true;
+          input.style.cursor = "not-allowed";
+          input.style.opacity = "0.6";
+        } else {
+          input.disabled = false;
+          input.style.cursor = "text";
+          input.style.opacity = "1";
+        }
+      }
+    });
+
+    // Start or stop synchronization
+    if (mode === "auto") {
+      startAutoSync();
+    } else {
+      stopAutoSync();
+    }
+  };
+
+  const updateTimeFromDevice = () => {
+    if (timeMode !== "auto" || isInputActive) return;
+
+    // For now, use browser's local time
+    // In the future, this could be replaced with time from device via WebSocket
+    const now = new Date();
+    const currentDate = now.toISOString().split("T")[0];
+    const currentHours = String(now.getHours()).padStart(2, "0");
+    const currentMinutes = String(now.getMinutes()).padStart(2, "0");
+    const currentSeconds = String(now.getSeconds()).padStart(2, "0");
+
+    // Add animation class for visual feedback
+    if (dateInput) {
+      dateInput.classList.add("custom-time__date-input--syncing");
+      setTimeout(() => {
+        dateInput.classList.remove("custom-time__date-input--syncing");
+      }, 1000);
+    }
+
+    const timeInputs = [hourInput, minuteInput, secondInput];
+    timeInputs.forEach((input) => {
+      if (input) {
+        input.classList.add("custom-time__time-input--syncing");
+        setTimeout(() => {
+          input.classList.remove("custom-time__time-input--syncing");
+        }, 1000);
+      }
+    });
+
+    if (dateInput) dateInput.value = currentDate;
+    if (hourInput) hourInput.value = currentHours;
+    if (minuteInput) minuteInput.value = currentMinutes;
+    if (secondInput) secondInput.value = currentSeconds;
+  };
+
+  const startAutoSync = () => {
+    stopAutoSync(); // Clear any existing interval
+    updateTimeFromDevice(); // Update immediately
+    syncInterval = window.setInterval(() => {
+      updateTimeFromDevice();
+    }, 1000); // Update every second
+  };
+
+  const stopAutoSync = () => {
+    if (syncInterval !== null) {
+      clearInterval(syncInterval);
+      syncInterval = null;
+    }
+  };
+
+  // Initialize mode toggle buttons
+  const toggleButtons = containerElement.querySelectorAll(
+    ".custom-time__toggle-btn"
+  );
+  toggleButtons.forEach((button) => {
+    button.addEventListener("click", (e) => {
+      const target = e.target as HTMLElement;
+      const mode = target.getAttribute("data-mode") as "auto" | "manual";
+      switchTimeMode(mode);
+    });
+  });
+
+  // Track input focus/blur for manual mode
+  [dateInput, hourInput, minuteInput, secondInput].forEach((input) => {
+    if (input) {
+      input.addEventListener("focus", () => {
+        if (timeMode === "manual") {
+          isInputActive = true;
+          stopAutoSync();
+        }
+      });
+
+      input.addEventListener("blur", () => {
+        if (timeMode === "manual") {
+          isInputActive = false;
+          // Don't restart auto sync in manual mode
+        }
+      });
+    }
+  });
+
+  // Initialize with auto mode
+  switchTimeMode("auto");
 
   const sendCustomTime = () => {
     if (!dateInput || !hourInput || !minuteInput || !secondInput) return;
@@ -156,19 +288,6 @@ const initCustomTime = (containerElement: HTMLElement) => {
       `Setting custom time: ${dateTime.toISOString()} (timestamp: ${timestamp})`
     );
     websocketService.send(WebSocketCommand.CUSTOM_TIME, String(timestamp));
-
-    // Display timestamp
-    const timestampContainer = containerElement.querySelector(
-      "#custom-time-timestamp"
-    ) as HTMLElement;
-    const timestampValue = containerElement.querySelector(
-      "#custom-time-timestamp-value"
-    ) as HTMLElement;
-
-    if (timestampContainer && timestampValue) {
-      timestampValue.textContent = String(timestamp);
-      timestampContainer.style.display = "block";
-    }
   };
 
   if (submitButton) {
@@ -193,12 +312,17 @@ const initCustomTime = (containerElement: HTMLElement) => {
     const newDescription =
       translations["custom-time-desc"]?.[newLang] ||
       "Set custom date and time for the clock";
+    const autoText = translations["automatic"]?.[newLang] || "Automatic";
+    const manualText = translations["manual"]?.[newLang] || "Manual";
 
     const titleElement = containerElement.querySelector(
       ".settings-section__title"
     );
     const descElement = containerElement.querySelector(
       ".settings-section__description"
+    );
+    const toggleButtons = containerElement.querySelectorAll(
+      ".custom-time__toggle-btn"
     );
 
     if (titleElement) {
@@ -210,6 +334,16 @@ const initCustomTime = (containerElement: HTMLElement) => {
     if (descElement) {
       descElement.textContent = newDescription;
     }
+
+    // Update toggle button texts
+    toggleButtons.forEach((button) => {
+      const mode = button.getAttribute("data-mode");
+      if (mode === "auto") {
+        button.textContent = autoText;
+      } else if (mode === "manual") {
+        button.textContent = manualText;
+      }
+    });
   });
 };
 
