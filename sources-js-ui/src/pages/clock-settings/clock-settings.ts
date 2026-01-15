@@ -348,7 +348,34 @@ const initCustomTime = (containerElement: HTMLElement) => {
   });
 };
 
+const initPageLoader = () => {
+  // Create loader element
+  const loader = document.createElement("div");
+  loader.className = "page-loader";
+  loader.innerHTML = `
+    <div class="page-loader__spinner"></div>
+  `;
+  document.body.appendChild(loader);
+
+  // Show loader immediately
+  loader.classList.add("page-loader--active");
+
+  // Hide loader after 2 seconds
+  setTimeout(() => {
+    loader.classList.remove("page-loader--active");
+    // Remove from DOM after animation
+    setTimeout(() => {
+      if (loader.parentNode) {
+        loader.parentNode.removeChild(loader);
+      }
+    }, 300);
+  }, 2000);
+};
+
 const initClockSettings = () => {
+  // Show page loader
+  initPageLoader();
+
   const container = document.querySelector(
     '[data-page="clock"] .settings-content'
   );
