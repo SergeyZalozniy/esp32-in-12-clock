@@ -13,4 +13,5 @@ export enum WebSocketCommand {
   WIFI_LIST = 12,
   REQUEST_WIFI_LIST = 13,
   CUSTOM_TIME = 14,
+  BACKLIGHT_COLOR = 15,
 }

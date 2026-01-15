@@ -364,4 +364,28 @@ export const translations: Translations = {
     en: "Timestamp",
     uk: "Мітка часу",
   },
+  "backlight-color": {
+    en: "Backlight Color",
+    uk: "Колір підсвітки",
+  },
+  "backlight-color-desc": {
+    en: "Choose the color for the RGB backlight",
+    uk: "Оберіть колір для RGB підсвітки",
+  },
+  "select-color": {
+    en: "Select Color",
+    uk: "Оберіть колір",
+  },
+  basic: {
+    en: "Basic",
+    uk: "Стандартний",
+  },
+  "standard-orange": {
+    en: "Retro (Standard)",
+    uk: "Ретро (Стандартний)",
+  },
+  "set-color": {
+    en: "Set Color",
+    uk: "Встановити колір",
+  },
 };

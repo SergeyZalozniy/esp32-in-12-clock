@@ -4,6 +4,7 @@ import { initTimezoneSelector } from "@components/timezone-selector";
 import { initTimeModeSwitcher } from "@components/time-mode-switcher";
 import { initBrightnessSlider } from "@components/brightness-slider";
 import { initNightMode } from "@components/night-mode";
+import { initCustomColor } from "@components/custom-color";
 import infoIcon from "@assets/info-icon.svg";
 import wifiIcon from "@assets/wifi-icon.svg";
 import { WebSocketCommand } from "@services/websocketCommands";
@@ -359,6 +360,7 @@ const initClockSettings = () => {
   const brightnessContainer = document.createElement("div");
   const nightModeContainer = document.createElement("div");
   const customTimeContainer = document.createElement("div");
+  const customColorContainer = document.createElement("div");
   const advancedModeContainer = document.createElement("div");
 
   container.appendChild(timeModeContainer);
@@ -366,6 +368,7 @@ const initClockSettings = () => {
   container.appendChild(brightnessContainer);
   container.appendChild(nightModeContainer);
   container.appendChild(customTimeContainer);
+  container.appendChild(customColorContainer);
   container.appendChild(advancedModeContainer);
 
   initToggleSwitch(
@@ -419,6 +422,7 @@ const initClockSettings = () => {
   initBrightnessSlider(brightnessContainer);
   initNightMode(nightModeContainer);
   initCustomTime(customTimeContainer);
+  initCustomColor(customColorContainer);
 };
 
 initClockSettings();
