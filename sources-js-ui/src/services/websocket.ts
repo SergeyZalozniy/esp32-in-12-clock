@@ -9,8 +9,12 @@ class WebSocketService {
   private reconnectDelay = 3000;
   private url: string;
 
-  constructor(url: string = 'ws://justtime.local:81/') {
-    this.url = url;
+  constructor(url?: string) {
+    // Use localhost:8081 for development, justtime.local:81 for production
+    const defaultUrl = window.location.hostname === 'localhost' 
+      ? 'ws://localhost:8081/'
+      : 'ws://justtime.local:81/';
+    this.url = url || defaultUrl;
   }
 
   connect(): void {

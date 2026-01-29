@@ -37,8 +37,10 @@ const render = (
     translations["standard-orange"]?.[lang] || "Standard Orange";
   const setColorText = translations["set-color"]?.[lang] || "Set Color";
 
+
+  // BACKLIGHT COLOR COMMENTED OUT BECAUSE IT'S NOT USED
   containerElement.innerHTML = `
-    <div class="settings-section">
+    <-- <div class="settings-section">
       <h3 class="settings-section__title flex items-center gap-8" data-i18n="backlight-color">
         <img src="${infoIcon}" alt="${title}" class="settings-section__icon" width="20" height="20">
         ${title}
@@ -92,7 +94,7 @@ const render = (
           ${setColorText}
         </button>
       </div>
-    </div>
+    </div> -->
   `;
 
   // Update RGB display

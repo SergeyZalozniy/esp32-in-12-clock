@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PORT = 3831;
-const WS_PORT = 81;
+const WS_PORT = 8081;
 
 // HTTP server for serving static files
 const server = http.createServer((req, res) => {
@@ -70,27 +70,41 @@ wss.on("connection", (ws) => {
   console.log("WebSocket client connected");
 
   ws.on("message", (message) => {
+    let messageStr;
+    
     if (Buffer.isBuffer(message)) {
-      // Binary message (file upload)
-      console.log(`Received binary message: ${message.length} bytes`);
-      // Handle file upload if needed
+      // Binary message - convert to string
+      messageStr = message.toString('utf-8');
+      console.log(`Received binary message: ${message.length} bytes, content: "${messageStr}"`);
     } else {
       // Text message
-      const command = message.charCodeAt(0);
-      const data = message.substring(1);
-      console.log(`WebSocket message - Command: ${command}, Data: ${data}`);
+      messageStr = message;
+      console.log(`Received text message: "${messageStr}"`);
+    }
 
-      // Handle CUSTOM_TIME command
-      if (command === 14) {
-        // CUSTOM_TIME
-        const timestamp = parseInt(data, 10);
-        const date = new Date(timestamp * 1000);
-        console.log(
-          `Setting custom time: ${date.toISOString()} (timestamp: ${timestamp})`
-        );
-        // Echo back or handle as needed
-        ws.send(String.fromCharCode(14) + data);
-      }
+    // Parse command (first character code)
+    const command = messageStr.charCodeAt(0);
+    const data = messageStr.substring(1);
+    console.log(`WebSocket message - Command: ${command}, Data: ${data}`);
+
+    // Handle CUSTOM_TIME command
+    if (command === 14) {
+      // CUSTOM_TIME
+      const timestamp = parseInt(data, 10);
+      const date = new Date(timestamp * 1000);
+      console.log(
+        `✅ Setting custom time: ${date.toISOString()} (timestamp: ${timestamp})`
+      );
+      // Echo back or handle as needed
+      ws.send(String.fromCharCode(14) + data);
+    }
+    
+    // Handle BACKLIGHT_COLOR command
+    if (command === 15) {
+      // BACKLIGHT_COLOR
+      console.log(`✅ Setting backlight color: ${data}`);
+      // Echo back or handle as needed
+      ws.send(String.fromCharCode(15) + data);
     }
   });
 

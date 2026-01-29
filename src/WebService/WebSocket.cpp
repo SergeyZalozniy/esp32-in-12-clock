@@ -7,10 +7,16 @@
 #include "../TimeCalculation/LocalTime.h"
 #include "../TimeCalculation/NTPTime.h"
 #include "../TimeCalculation/GPSTime.h"
+#include "../TimeCalculation/RealTimeClock.h"
 #include "../LampIndication/Brightness.h"
 #include "../LampIndication/Indication.h"
+#include <Adafruit_NeoPixel.h>
 
 WebSocketsServer webSocket = WebSocketsServer(webSocketPort);
+
+// External LED strip variables
+extern Adafruit_NeoPixel strip;
+extern volatile bool stripIsActive;
 
 // Update tracking variables
 static bool updateInProgress = false;
@@ -30,7 +36,9 @@ enum SocketCommands {
   advancedMode = 10,
   language = 11,
   wifiList = 12,
-  requestWifiList = 13
+  requestWifiList = 13,
+  customTime = 14,
+  backlightColor = 15
 };
 
 
@@ -56,7 +64,7 @@ void webSocketSendCurrentState() {
     } else {
       webSocket.broadcastTXT(String((char) SocketCommands::autoTimeZone) + "manual");
     }
-    webSocket.broadcastTXT(String((char) SocketCommands::timezoneName) + getTimezoneName() + "|" + getPosix());
+    webSocket.broadcastTXT(String((char) SocketCommands::timezoneName) + ::getTimezoneName() + "|" + ::getPosix());
     if (readGPSEnable()) {
       webSocket.broadcastTXT(String((char) SocketCommands::enableGPS) + "true");
     } else {
@@ -191,6 +199,57 @@ void procceedSocketEvent(SocketCommands command, String value) {
   case SocketCommands::requestWifiList:
     sendWifiList();
     break;
+  case SocketCommands::customTime: {
+      // Receive Unix timestamp and set RTC time
+      unsigned long timestamp = value.toInt();
+      if (timestamp > 0) {
+        // Convert Unix timestamp to date/time components
+        time_t rawtime = timestamp;
+        struct tm * timeinfo = gmtime(&rawtime);
+        
+        byte hour = timeinfo->tm_hour;
+        byte minute = timeinfo->tm_min;
+        byte second = timeinfo->tm_sec;
+        byte day = timeinfo->tm_mday;
+        byte month = timeinfo->tm_mon + 1; // tm_mon is 0-11
+        byte year = timeinfo->tm_year - 100; // tm_year is years since 1900, we need years since 2000
+        byte dayOfWeek = timeinfo->tm_wday;
+        
+        setRTCDateTime(hour, minute, second, day, month, year, dayOfWeek);
+        Serial.print(F("Custom time set: "));
+        Serial.println(timestamp);
+      }
+      break;
+    }
+  case SocketCommands::backlightColor: {
+      // Receive RGB color in format "R|G|B"
+      String parts[3];
+      int count = splitAndTrim(value, parts, 3);
+      if (count == 3) {
+        int r = parts[0].toInt();
+        int g = parts[1].toInt();
+        int b = parts[2].toInt();
+        
+        // Validate RGB values (0-255)
+        if (r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255) {
+          // Set all LEDs to the specified color
+          for (int i = 0; i < stripLedCount; i++) {
+            strip.setPixelColor(i, strip.Color(r, g, b));
+          }
+          strip.show();
+          stripIsActive = true;
+          
+          Serial.print(F("Backlight color set: RGB("));
+          Serial.print(r);
+          Serial.print(F(", "));
+          Serial.print(g);
+          Serial.print(F(", "));
+          Serial.print(b);
+          Serial.println(F(")"));
+        }
+      }
+      break;
+    }
   default:
   
     break;

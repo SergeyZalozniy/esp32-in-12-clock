@@ -15,13 +15,8 @@ unsigned long lastDateStringWasUpdated = UINT_MAX;
 time_t getLocalTime();
 
 void setupLocalTime() {
-  if (readAutoTimezone()) {
-    if (!localTimeZone.setCache(PREFERENCE_NAME_SPACE, F("timezone"))) {
-      localTimeZone.setPosix(readManualTimeZoneOlson());
-    }
-  } else {
-    localTimeZone.setPosix(readManualTimeZoneOlson());
-  }
+  // Set timezone from saved settings
+  localTimeZone.setPosix(readManualTimeZoneOlson());
 }
 
 boolean setTimeZone(String tz, String posix) {
