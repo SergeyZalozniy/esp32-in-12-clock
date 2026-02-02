@@ -104,3 +104,7 @@ time_t getLocalTime() {
 
     return utc + deltaTime;
 }
+
+Timezone getLocalTimeZone() {
+  return localTimeZone;
+}

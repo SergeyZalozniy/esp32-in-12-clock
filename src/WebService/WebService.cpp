@@ -305,14 +305,16 @@ void HTTP_init() {
             HTTPUpload &upload = server.upload();
             if (upload.status == UPLOAD_FILE_START) {
                 String filename = upload.filename;
-                int type = -1;
-                if (filename.equalsIgnoreCase("firmware.bin")) {
-                    type = U_FLASH;
-                } else if (filename.equalsIgnoreCase("spiffs.bin")) {
+                int type = U_FLASH;
+                
+                filename.toLowerCase();
+                if (filename.indexOf("spiffs") >= 0) {
                     type = U_SPIFFS;
                 }
+                
                 if (!Update.begin(UPDATE_SIZE_UNKNOWN, type)) {
                     Update.printError(Serial);
+                    return;
                 }
             } else if (upload.status == UPLOAD_FILE_WRITE) {
                 if (Update.write(upload.buf, upload.currentSize) != upload.currentSize){

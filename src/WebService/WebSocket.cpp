@@ -1,6 +1,7 @@
 #include <WebSocketsServer.h>
 #include <WiFi.h>
 #include <Update.h>
+#include "ezTime.h"
 
 #include "../Helpers/Constants.h"
 #include "../Helpers/EEPROMHelper.h"
@@ -203,21 +204,10 @@ void procceedSocketEvent(SocketCommands command, String value) {
       // Receive Unix timestamp and set RTC time
       unsigned long timestamp = value.toInt();
       if (timestamp > 0) {
-        // Convert Unix timestamp to date/time components
-        time_t rawtime = timestamp;
-        struct tm * timeinfo = gmtime(&rawtime);
+        getLocalTimeZone().setTime(timestamp);
         
-        byte hour = timeinfo->tm_hour;
-        byte minute = timeinfo->tm_min;
-        byte second = timeinfo->tm_sec;
-        byte day = timeinfo->tm_mday;
-        byte month = timeinfo->tm_mon + 1; // tm_mon is 0-11
-        byte year = timeinfo->tm_year - 100; // tm_year is years since 1900, we need years since 2000
-        byte dayOfWeek = timeinfo->tm_wday;
-        
-        setRTCDateTime(hour, minute, second, day, month, year, dayOfWeek);
-        Serial.print(F("Custom time set: "));
-        Serial.println(timestamp);
+        setRTCDateTime((byte)UTC.hour(), (byte)UTC.minute(), (byte)UTC.second(), (byte)UTC.day(), (byte)UTC.month(), (byte)(UTC.year() % 100), (byte)UTC.weekday());
+        setTime((int)hour, (int)minute, (int)second, (int)day, (int)month, (int)year);
       }
       break;
     }

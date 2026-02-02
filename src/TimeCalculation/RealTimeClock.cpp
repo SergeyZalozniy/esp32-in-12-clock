@@ -1,6 +1,5 @@
 #include <Arduino.h>
 #include <Wire.h>
-
 #include "ezTime.h"
 
 #include "../Helpers/Constants.h"

@@ -10,3 +10,4 @@ int* getDate();
 int* IRAM_ATTR getCachedTime();
 int* IRAM_ATTR getCachedDate();
 void updateTimeCache();
+Timezone getLocalTimeZone();
