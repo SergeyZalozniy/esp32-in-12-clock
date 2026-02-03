@@ -20,6 +20,10 @@ export const translations: Translations = {
     en: "Wi-Fi",
     uk: "Wi-Fi",
   },
+  info: {
+    en: "Info",
+    uk: "Інформація",
+  },
   "clock-settings": {
     en: "Just Time Settings",
     uk: "Налаштування Just Time годинника",
@@ -27,6 +31,34 @@ export const translations: Translations = {
   "wifi-settings": {
     en: "Wi-Fi Settings",
     uk: "Налаштування Wi-Fi",
+  },
+  "info-settings": {
+    en: "Info",
+    uk: "Інформація",
+  },
+  contacts: {
+    en: "Contacts",
+    uk: "Контакти",
+  },
+  email: {
+    en: "Email",
+    uk: "Email",
+  },
+  instagram: {
+    en: "Instagram",
+    uk: "Instagram",
+  },
+  "clock-number": {
+    en: "Clock Number",
+    uk: "Номер годинника",
+  },
+  "build-date": {
+    en: "Build Date",
+    uk: "Дата збірки",
+  },
+  "soft-version": {
+    en: "Soft version",
+    uk: "Версія прошивки",
   },
   "advanced-mode": {
     en: "Advanced Mode",
