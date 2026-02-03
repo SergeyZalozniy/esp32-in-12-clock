@@ -12,8 +12,6 @@ unsigned long lastTimeStringWasUpdated = UINT_MAX;
 int *updatedDate;
 unsigned long lastDateStringWasUpdated = UINT_MAX;
 
-time_t getLocalTime();
-
 void setupLocalTime() {
   // Set timezone from saved settings
   localTimeZone.setPosix(readManualTimeZoneOlson());
@@ -26,21 +24,17 @@ boolean setTimeZone(String tz, String posix) {
 }
 
 boolean setTimeZone(String tz) {
-  if (localTimeZone.setLocation(tz)) {
+  if (localTimeZone.setLocation(tz) || 
+      (tz == F("Europe/Kyiv") && localTimeZone.setLocation(F("Europe/Kiev")))) {
+    saveManualTimeZoneName(tz);
+    saveManualTimeZoneOlson(localTimeZone.getPosix());
     return true;
-  }
-  // Renamed timzezone in 2022 - Europe/Kiev -> Europe/Kyiv
-  if (tz == F("Europe/Kyiv")) {
-    return localTimeZone.setLocation(F("Europe/Kiev"));
   }
 
   return false;
 }
 
 String getTimezoneName() {
-  if (readAutoTimezone()) {
-    return localTimeZone.getTimezoneName();
-  }
   return readManualTimeZoneName();
 }
 
@@ -89,20 +83,6 @@ void updateTimeCache() {
     updatedDate = getDate();
     lastDateStringWasUpdated = millis();
   }
-}
-
-time_t getLocalTime() {
-    static int lastCorrectedHour = -1;
-    static time_t deltaTime = 0;
-
-    time_t utc = now();
-
-    if (lastCorrectedHour != hour()) {
-        deltaTime = localTimeZone.getOffset();
-        lastCorrectedHour = hour();
-    }
-
-    return utc + deltaTime;
 }
 
 Timezone getLocalTimeZone() {

@@ -80,7 +80,7 @@ void loop() {
   updateTimeCache();
   updateSecondsCache();
 
-  syncRTCWithInternalTime();
+  syncRTCWithInternalTimeIfNeeded();
   syncGPSTimeWithRTC();
   syncNTPTimeWithRTC();
 

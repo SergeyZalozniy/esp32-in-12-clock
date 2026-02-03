@@ -203,12 +203,12 @@ void procceedSocketEvent(SocketCommands command, String value) {
   case SocketCommands::customTime: {
       // Receive Unix timestamp and set RTC time
       unsigned long timestamp = value.toInt();
-      if (timestamp > 0) {
-        getLocalTimeZone().setTime(timestamp);
-        
-        setRTCDateTime((byte)UTC.hour(), (byte)UTC.minute(), (byte)UTC.second(), (byte)UTC.day(), (byte)UTC.month(), (byte)(UTC.year() % 100), (byte)UTC.weekday());
-        setTime((int)hour, (int)minute, (int)second, (int)day, (int)month, (int)year);
+      if (timestamp == 0) {
+        return;
       }
+      UTC.setTime(timestamp);
+      setRTCDateTime((byte)UTC.hour(), (byte)UTC.minute(), (byte)UTC.second(), (byte)UTC.day(), (byte)UTC.month(), (byte)(UTC.year() % 100), (byte)UTC.weekday());
+      syncRTCWithInternalTime();
       break;
     }
   case SocketCommands::backlightColor: {

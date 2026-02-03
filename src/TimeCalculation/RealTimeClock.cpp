@@ -45,12 +45,16 @@ boolean hasValidDateAndTime() {
   return dateTimeIsValid;
 }
 
-void syncRTCWithInternalTime() {
+
+void syncRTCWithInternalTimeIfNeeded() {
   if (millis() - lastTimeRTCSync < 10000) {
     return ;
   }
+  syncRTCWithInternalTime();
   lastTimeRTCSync = millis();
+}
 
+void syncRTCWithInternalTime() {
   byte hours, minutes, seconds, day, month, year, dayOfWeek;
   getRTCTime(seconds, minutes, hours, dayOfWeek, day, month, year);
   setTime((int)hours, (int)minutes, (int)seconds, (int)day, (int)month, (int)year);
