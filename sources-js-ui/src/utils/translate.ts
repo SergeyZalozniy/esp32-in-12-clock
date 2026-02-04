@@ -21,7 +21,7 @@ export const translations: Translations = {
     uk: "Wi-Fi",
   },
   info: {
-    en: "Info",
+    en: "Information",
     uk: "Інформація",
   },
   "clock-settings": {
@@ -32,10 +32,10 @@ export const translations: Translations = {
     en: "Wi-Fi Settings",
     uk: "Налаштування Wi-Fi",
   },
-  "info-settings": {
-    en: "Info",
-    uk: "Інформація",
-  },
+  // "info-settings": {
+  //   en: "Information",
+  //   uk: "Інформація",
+  // },
   contacts: {
     en: "Contacts",
     uk: "Контакти",
